@@ -86,7 +86,7 @@ class CaptureService:
 
         self.currentModel = cv2.bitwise_and(self.currentModel, self.currentModel, mask=cv2.bitwise_not(imgPersistentChanges))
         imgBinarized = cv2.bitwise_and(imgBinarized, imgBinarized, mask=imgPersistentChanges)
-        self.currentModel = cv2.bitwise_and(self.currentModel, imgBinarized)
+        self.currentModel = cv2.bitwise_or(self.currentModel, imgBinarized)
 
         endTime = (time.time() / 1000)
         print(f"Update model loop took: {(endTime - startTime)} milliseconds")
