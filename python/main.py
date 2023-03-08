@@ -34,7 +34,6 @@ class CaptureActivity:
                 self.cs = CaptureService(imgWarp.shape[0], imgWarp.shape[1])
             currentModel = self.cs.capture(imgWarp)
             if currentModel is not None:
-                # return currentModel
                 cv2.imshow("Current Model", currentModel)
     
 if __name__ == "__main__":
