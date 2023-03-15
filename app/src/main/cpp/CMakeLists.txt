@@ -5,9 +5,14 @@
 
 cmake_minimum_required(VERSION 3.22.1)
 
+#OpenCV
+set(OpenCV_STATIC ON)
+set(OpenCV_DIR D:/DigitalWhiteBoard/8_Semester/OpenCV-android-sdk/sdk/native/jni)
+find_package(OpenCV REQUIRED)
+
 # Declares and names the project.
 
-project("digitalwhiteboard")
+#project("digitalwhiteboard")
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -15,12 +20,13 @@ project("digitalwhiteboard")
 # Gradle automatically packages shared libraries with your APK.
 
 add_library( # Sets the name of the library.
-        digitalwhiteboard
+        native-lib
 
         # Sets the library as a shared library.
         SHARED
 
         # Provides a relative path to your source file(s).
+        opencvUtils.cpp
         native-lib.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -36,13 +42,17 @@ find_library( # Sets the name of the path variable.
         # you want CMake to locate.
         log)
 
+find_library(jnigraphics-lib jnigraphics)
+
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-        digitalwhiteboard
+        native-lib
 
         # Links the target library to the log library
         # included in the NDK.
+        ${OpenCV_LIBS}
+        ${jnigraphics-lib}
         ${log-lib})
