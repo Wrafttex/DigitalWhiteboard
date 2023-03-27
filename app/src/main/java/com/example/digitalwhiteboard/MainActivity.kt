@@ -1,47 +1,138 @@
 package com.example.digitalwhiteboard
 
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.Image
+import android.graphics.Matrix
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.SeekBar
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
+import androidx.core.view.size
+import com.example.digitalwhiteboard.databinding.ActivityMainBinding
 import java.lang.Float.max
+import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 
 class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var cameraExecutor: ExecutorService
     var srcBitmap: Bitmap? = null
     var dstBitmap: Bitmap? = null
-    private lateinit var testImage: ImageView
-    lateinit var sldSigma: SeekBar
+    private lateinit var testImage: PreviewView
+    private lateinit var imageView: ImageView
+    private lateinit var sldSigma: SeekBar
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        testImage = findViewById(R.id.imageView)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        cameraExecutor = Executors.newSingleThreadExecutor()
+        requestPermission()
+        testImage = findViewById(R.id.viewFinder)
         sldSigma = findViewById(R.id.sldSigma)
-
-        srcBitmap = BitmapFactory.decodeResource(this.resources, R.drawable.testimage)
-        dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
-        testImage.setImageBitmap(dstBitmap)
-
+        imageView = findViewById(R.id.imageView)
         sldSigma.setOnSeekBarChangeListener(this)
 
+        //if (testImage.previewStreamState.value == PreviewView.StreamState.STREAMING) {
+        //    srcBitmap = testImage.bitmap
+        //    imageView.setImageBitmap(srcBitmap)
+        //}
+    }
 
+    private fun requestPermission() {
+        requestCameraPermissionIfMissing { granted ->
+            if (granted)
+                startCamera()
+            else
+                Toast.makeText(this, "Please allow", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun requestCameraPermissionIfMissing(onResult: ((Boolean) -> Unit)) {
+        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+            onResult(true)
+        else
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+                onResult(it)
+            }.launch(android.Manifest.permission.CAMERA)
+    }
+
+    private fun startCamera() {
+        val processCameraProvider = ProcessCameraProvider.getInstance(this)
+        processCameraProvider.addListener({
+            try {
+                val cameraProvider = processCameraProvider.get()
+                val previewUseCase = buildPreviewUseCase()
+                val imageAnalysisUseCase = buildImageAnalysisUseCase()
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    this,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    previewUseCase,
+                    imageAnalysisUseCase
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+    private fun buildPreviewUseCase(): Preview {
+        return Preview.Builder().build().also { it.setSurfaceProvider(binding.viewFinder.surfaceProvider) }
+    }
+
+    private fun buildImageAnalysisUseCase(): ImageAnalysis {
+        return ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build().also {
+                it.setAnalyzer(cameraExecutor) { image ->
+                    val bitmap = image.toBitmap()
+                    val rotatedImage = bitmap.rotate(90f)
+                    val finalImage = rotatedImage!!.copy(rotatedImage!!.config, true)
+                    myFlip(rotatedImage!!, finalImage!!)
+                    runOnUiThread {
+                        binding.imageView.setImageBitmap(finalImage)
+                    }
+                    image.close()
+                }
+            }
+    }
+
+    fun Bitmap.rotate(degrees: Float): Bitmap {
+        val matrix = Matrix().apply { postRotate(degrees) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
     fun btnFlipOnClick(view: View) {
+        if (srcBitmap == null && dstBitmap == null) {
+            srcBitmap = testImage.bitmap
+            dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
+        }
         myFlip(srcBitmap!!,srcBitmap!!)
         this.doBlur()
     }
 
     private fun doBlur() {
+        if (srcBitmap == null && dstBitmap == null) {
+            srcBitmap = testImage.bitmap
+            dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
+        }
         // The SeekBar range is 0-100 convert it to 0.1-10
         val sigma = max(0.1F, sldSigma.progress / 10F)
 
         // This is the actual call to the blur method inside native-lib.cpp
         this.myBlur(srcBitmap!!, dstBitmap!!, sigma)
+        imageView.setImageBitmap(dstBitmap)
     }
 
     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
