@@ -4,7 +4,9 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.os.Bundle
+import android.util.Size
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.Toast
@@ -12,19 +14,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import androidx.core.view.size
 import com.example.digitalwhiteboard.databinding.ActivityMainBinding
 import java.lang.Float.max
-import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 
-class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
+class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, ImageAnalysis.Analyzer {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var cameraExecutor: ExecutorService
@@ -33,6 +34,8 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
     private lateinit var testImage: PreviewView
     private lateinit var imageView: ImageView
     private lateinit var sldSigma: SeekBar
+    private lateinit var startButton: Button
+    var startBoolean: Boolean = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -40,9 +43,11 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
         cameraExecutor = Executors.newSingleThreadExecutor()
         requestPermission()
         testImage = findViewById(R.id.viewFinder)
+        startButton = findViewById(R.id.btnFlip)
         sldSigma = findViewById(R.id.sldSigma)
         imageView = findViewById(R.id.imageView)
         sldSigma.setOnSeekBarChangeListener(this)
+
 
         //if (testImage.previewStreamState.value == PreviewView.StreamState.STREAMING) {
         //    srcBitmap = testImage.bitmap
@@ -88,9 +93,18 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
         }, ContextCompat.getMainExecutor(this))
     }
     private fun buildPreviewUseCase(): Preview {
-        return Preview.Builder().build().also { it.setSurfaceProvider(binding.viewFinder.surfaceProvider) }
+        return Preview.Builder()
+            .build().also { it.setSurfaceProvider(binding.viewFinder.surfaceProvider) }
     }
 
+    private fun buildImageAnalysisUseCase(): ImageAnalysis {
+        return ImageAnalysis.Builder()
+            .setTargetResolution(Size(imageView.measuredWidth, imageView.measuredHeight))
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build().also { it.setAnalyzer(cameraExecutor, this) }
+    }
+
+    /*
     private fun buildImageAnalysisUseCase(): ImageAnalysis {
         return ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -107,6 +121,19 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
                 }
             }
     }
+    */
+
+    override fun analyze(image: ImageProxy) {
+        val bitmap = image.toBitmap()
+        val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
+        val finalImage = rotatedImage.copy(rotatedImage.config, true)
+        myFlip(rotatedImage, finalImage)
+        runOnUiThread {
+            binding.imageView.setImageBitmap(finalImage)
+        }
+        image.close()
+    }
+
 
     fun Bitmap.rotate(degrees: Float): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees) }
@@ -114,12 +141,24 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
     }
 
     fun btnFlipOnClick(view: View) {
+        if (!startBoolean) {
+            startButton.text = "Stop"
+            startBoolean = true
+        } else {
+            startButton.text = "Start"
+            startBoolean = false
+            imageView.setImageBitmap(null)
+        }
+
+
+        /*
         if (srcBitmap == null && dstBitmap == null) {
             srcBitmap = testImage.bitmap
             dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
         }
         myFlip(srcBitmap!!,srcBitmap!!)
         this.doBlur()
+         */
     }
 
     private fun doBlur() {
