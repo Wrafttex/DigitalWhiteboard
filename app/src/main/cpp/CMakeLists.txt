@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 #OpenCV
 set(OpenCV_STATIC ON)
-set(OpenCV_DIR C:/Users/Math4/Desktop/OpenCV-android-sdk/sdk/native/jni)
+set(OpenCV_DIR "D:/temp ting/sw8 projekt/OpenCV-android-sdk/sdk/native/jni")
 find_package(OpenCV REQUIRED)
 
 # Declares and names the project.
@@ -27,7 +27,9 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         opencvUtils.cpp
-        native-lib.cpp)
+        native-lib.cpp
+        CaptureService.cpp
+        cornerDetrctor.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
