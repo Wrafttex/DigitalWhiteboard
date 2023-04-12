@@ -1,5 +1,6 @@
 package com.example.digitalwhiteboard
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -47,6 +48,12 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
         sldSigma = findViewById(R.id.sldSigma)
         imageView = findViewById(R.id.imageView)
         sldSigma.setOnSeekBarChangeListener(this)
+
+        val buttonClick = findViewById<Button>(R.id.SettingsButton)
+        buttonClick.setOnClickListener(){
+            val intent = Intent (this@MainActivity, SettingActivity::class.java)
+            startActivity(intent)
+        }
 
 
         //if (testImage.previewStreamState.value == PreviewView.StreamState.STREAMING) {
