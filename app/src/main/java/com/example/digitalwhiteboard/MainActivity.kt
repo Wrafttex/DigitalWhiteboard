@@ -1,9 +1,12 @@
 package com.example.digitalwhiteboard
 
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.SeekBar
@@ -16,10 +19,16 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import androidx.core.view.size
 import com.example.digitalwhiteboard.databinding.ActivityMainBinding
+import org.pytorch.IValue
+import org.pytorch.Module
+import org.pytorch.Tensor
+import org.pytorch.torchvision.TensorImageUtils
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.lang.Float.max
-import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -33,6 +42,37 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
     private lateinit var testImage: PreviewView
     private lateinit var imageView: ImageView
     private lateinit var sldSigma: SeekBar
+    var module: Module? = null
+    private var testBitmap: Bitmap? = null
+    private val TAG = "AssetUtils"
+
+
+    //private fun assetAsIS(assentName: String )
+    //    = this::class.java.getResourceAsStream(assentName).bufferedReader().readLine()
+
+    private fun assetFilePath (context: Context, assetName: String): String? {
+        val file = File(context.filesDir, assetName)
+        if (file.exists() && file.length() > 0) {
+            return file.absolutePath
+        }
+        try {
+            context.assets.open(assetName).use { inputStream ->
+                FileOutputStream(file).use { outputStream ->
+                    val buffer = ByteArray(4 * 1024)
+                    var read: Int
+                    while (inputStream.read(buffer).also { read = it } != -1) {
+                        outputStream.write(buffer, 0, read)
+                    }
+                    outputStream.flush()
+                }
+            }
+            return file.absolutePath
+        } catch (e: IOException) {
+            Log.e(TAG, "Error process asset $assetName to file path", e)
+        }
+        return null
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -43,6 +83,24 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
         sldSigma = findViewById(R.id.sldSigma)
         imageView = findViewById(R.id.imageView)
         sldSigma.setOnSeekBarChangeListener(this)
+
+        try {
+            //val inputStream: InputStream =  assetAsIS("app/src/main/res/drawable-nodpi/testimage2.png").byteInputStream()
+            //testBitmap = BitmapFactory.decodeStream(inputStream)
+            //Module.load("app/src/main/assets/vit_base_patch8_224.ptl")
+            testBitmap = BitmapFactory.decodeStream(getAssets().open("testimage2.png"))
+            module = Module.load(assetFilePath(this, "vit_base_patch8_224.ptl"))
+        }catch(e: Exception) {
+            e.printStackTrace()
+        }
+
+        /**
+        val inputTensor: Tensor = TensorImageUtils.bitmapToFloat32Tensor(testBitmap, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB)
+        val outputTensor: Tensor = module!!.forward(IValue.from(inputTensor)).toTensor()
+
+        val output: FloatArray = outputTensor.dataAsFloatArray
+        println(output)
+         **/
 
         //if (testImage.previewStreamState.value == PreviewView.StreamState.STREAMING) {
         //    srcBitmap = testImage.bitmap
@@ -114,12 +172,19 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
     }
 
     fun btnFlipOnClick(view: View) {
+        /**
         if (srcBitmap == null && dstBitmap == null) {
             srcBitmap = testImage.bitmap
             dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
         }
         myFlip(srcBitmap!!,srcBitmap!!)
         this.doBlur()
+**/
+        val inputTensor: Tensor = TensorImageUtils.bitmapToFloat32Tensor(testBitmap, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB)
+        val outputTensor: Tensor = module!!.forward(IValue.from(inputTensor)).toTensor()
+
+        val output: FloatArray = outputTensor.dataAsFloatArray
+        println(output)
     }
 
     private fun doBlur() {

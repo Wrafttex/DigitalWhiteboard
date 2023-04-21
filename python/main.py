@@ -26,7 +26,7 @@ class CaptureActivity:
     def analyzeImage(self, img):
         # Transform perspective
         imgWarp = self.pt.getPerspective(img, self.corners)
-
+        cv2.imshow("transformedImage", imgWarp)
 
         # Capture
         if imgWarp is not None:
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         ret, frame = webcam.read()
         if ret == True:
             h, w, _ = frame.shape
-            if check == False:
+            if check == False:  
                 ca.setCorners(frame)
             else:    
                 out = ca.analyzeImage(frame)
