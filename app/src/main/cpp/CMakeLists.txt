@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10.2)
 
 #OpenCV
 set(OpenCV_STATIC ON)
-set(OpenCV_DIR C:/Users/Math4/Desktop/OpenCV-android-sdk/sdk/native/jni)
+set(OpenCV_DIR C:/Users/Nobody/StudioProjects/8_Semester_opencv_magni/opencv/sdk/native/jni)
 find_package(OpenCV REQUIRED)
 
 # Declares and names the project.
