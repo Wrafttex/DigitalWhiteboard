@@ -111,6 +111,14 @@ Java_com_example_digitalwhiteboard_DrawActivity_myFlip (JNIEnv *env, jobject, jo
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_com_example_digitalwhiteboard_CornerActivity_myFlip (JNIEnv *env, jobject, jobject bitmapIn, jobject bitmapOut) {
+  Mat src;
+  bitmapToMat(env, bitmapIn, src, false);
+  myFlip(src);
+  matToBitmap(env, src, bitmapOut, false);
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_example_digitalwhiteboard_DrawActivity_myBlur (JNIEnv *env, jobject, jobject bitmapIn, jobject bitmapOut, jfloat sigma) {
   Mat src;
   bitmapToMat(env, bitmapIn, src, false);
