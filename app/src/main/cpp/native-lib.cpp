@@ -95,7 +95,7 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_example_digitalwhiteboard_MainActivity_stringFromJNI(
+Java_com_example_digitalwhiteboard_DrawActivity_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
   std::string hello = "Hello from C++";
@@ -103,7 +103,7 @@ Java_com_example_digitalwhiteboard_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_digitalwhiteboard_MainActivity_myFlip (JNIEnv *env, jobject, jobject bitmapIn, jobject bitmapOut) {
+Java_com_example_digitalwhiteboard_DrawActivity_myFlip (JNIEnv *env, jobject, jobject bitmapIn, jobject bitmapOut) {
   Mat src;
   bitmapToMat(env, bitmapIn, src, false);
   myFlip(src);
@@ -111,7 +111,7 @@ Java_com_example_digitalwhiteboard_MainActivity_myFlip (JNIEnv *env, jobject, jo
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_digitalwhiteboard_MainActivity_myBlur (JNIEnv *env, jobject, jobject bitmapIn, jobject bitmapOut, jfloat sigma) {
+Java_com_example_digitalwhiteboard_DrawActivity_myBlur (JNIEnv *env, jobject, jobject bitmapIn, jobject bitmapOut, jfloat sigma) {
   Mat src;
   bitmapToMat(env, bitmapIn, src, false);
   myBlur(src, sigma);
