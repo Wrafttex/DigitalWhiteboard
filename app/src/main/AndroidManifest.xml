@@ -16,9 +16,14 @@
         android:theme="@style/Theme.DigitalWhiteBoard"
         tools:targetApi="31">
         <activity
+            android:name=".DrawActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CornerActivity"
+            android:exported="false" />
+        <activity
             android:name=".SettingActivity"
             android:exported="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
