@@ -40,7 +40,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     var testBool: Boolean = false
     private var cornerPaint: Paint = Paint()
     private var boxPaint: Paint = Paint()
-    private var corners: ArrayList<ArrayList<Float>> = ArrayList()
+    private var corners: Array<FloatArray> = Array(4){ FloatArray(2) }
     private lateinit var drawing: Bitmap
     private var path: Path = Path()
 
@@ -64,7 +64,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
             val intent = Intent (this@CornerActivity, DrawActivity::class.java)
             /* Use this to send data from one activity to another, it can take basically all type value  */
             intent.putExtra("key","value")
-            intent.putExtra("CornerValue", floatArrayOf(1.1f,2.2f,3.3f,4.4f))
+            intent.putExtra("CornerValue", corners)
             startActivity(intent)
             finish()
         }
@@ -123,11 +123,15 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
 
     override fun analyze(image: ImageProxy) {
         if (autoCornerBool) {
-            val newCorners: ArrayList<ArrayList<Float>> = ArrayList()
-            newCorners.add(arrayListOf(1280f, 960f, 20f))
-            newCorners.add(arrayListOf(1280f, 0f, 20f))
-            newCorners.add(arrayListOf(0f, 0f, 20f))
-            newCorners.add(arrayListOf(0f, 960f, 20f))
+            val newCorners: Array<FloatArray> = Array(4){ FloatArray(2) }
+            newCorners[0][0] = 1280f
+            newCorners[0][1] = 960f
+            newCorners[1][0] = 1280f
+            newCorners[1][1] = 0f
+            newCorners[2][0] = 0f
+            newCorners[2][1] = 0f
+            newCorners[3][0] = 0f
+            newCorners[3][1] = 960f
             updateCorners(newCorners)
         }
         val bitmap = image.toBitmap()
@@ -156,12 +160,6 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     private fun setCorners() {
         val widthMargin = drawingOverlay.width / 1f
         val heightMargin = drawingOverlay.height / 1f
-        if (corners.isEmpty()) {
-            corners.add(arrayListOf(0f, 0f, 20f))
-            corners.add(arrayListOf(0f, 0f, 20f))
-            corners.add(arrayListOf(0f, 0f, 20f))
-            corners.add(arrayListOf(0f, 0f, 20f))
-        }
         corners[0][0] = widthMargin
         corners[0][1] = heightMargin
         corners[1][0] = widthMargin
@@ -172,13 +170,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         corners[3][1] = heightMargin
     }
 
-    private fun updateCorners(newCorners: ArrayList<ArrayList<Float>>) {
-        if (corners.isEmpty()) {
-            corners.add(arrayListOf(0f, 0f, 20f))
-            corners.add(arrayListOf(0f, 0f, 20f))
-            corners.add(arrayListOf(0f, 0f, 20f))
-            corners.add(arrayListOf(0f, 0f, 20f))
-        }
+    private fun updateCorners(newCorners: Array<FloatArray>) {
         for (i in 0..3) {
             for (j in 0..1) {
                 corners[i][j] = newCorners[i][j]
@@ -192,9 +184,9 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         path.reset()
         path.moveTo(corners[3][0], corners[3][1])
-        for (ArrayList in corners) {
-            canvas.drawCircle(ArrayList[0], ArrayList[1], ArrayList[2], cornerPaint)
-            path.lineTo(ArrayList[0], ArrayList[1])
+        for (Array in corners) {
+            canvas.drawCircle(Array[0], Array[1], 20f, cornerPaint)
+            path.lineTo(Array[0], Array[1])
         }
         canvas.drawPath(path, boxPaint)
         overlayHolder.unlockCanvasAndPost(canvas)
