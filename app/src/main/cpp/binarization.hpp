@@ -5,10 +5,10 @@
 
 class binarization {
 private:
-    const int MAX_THRESH_VALUE = 255;
-    const int BLOCK_SIZE = 21;
-    const int C = 4;
-    const int BLUR_KERNEL_SIZE = 3;
+    int MAX_THRESH_VALUE = 255;
+    int BLOCK_SIZE = 21;
+    int C = 4;
+    int BLUR_KERNEL_SIZE = 3;
 
 public:
     // Binarizes a gray scale image.

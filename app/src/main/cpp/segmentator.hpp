@@ -1,9 +1,10 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+//#include <torch/script.h>
 
 class segmentator {
 public:
-    cv::Mat segmentate(const cv::Mat& image){}
+    cv::Mat segmentate(const cv::Mat& image){return image;}
 };
 
 // class segmentator {
