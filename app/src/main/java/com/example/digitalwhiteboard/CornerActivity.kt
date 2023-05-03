@@ -169,8 +169,8 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
 
     private fun updateCorners(newCorners: Array<FloatArray>) {
         for (i in 0..3) {
-            corners[i].x = newCorners[i][0]
-            corners[i].y = newCorners[i][1]
+            corners[i].x = if (newCorners[i][0] > drawingOverlay.width) drawingOverlay.width.toFloat() else if (newCorners[i][0] < 0f) 0f else newCorners[i][0]
+            corners[i].y = if (newCorners[i][1] > drawingOverlay.height) drawingOverlay.height.toFloat() else if (newCorners[i][1] < 0f) 0f else newCorners[i][1]
         }
         drawBoxAndCorners()
     }
