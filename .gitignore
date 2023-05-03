@@ -33,3 +33,6 @@
 
 # Other files
 python/__pycache__/
+.gradle/
+app/
+.vscode/

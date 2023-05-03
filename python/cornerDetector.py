@@ -15,7 +15,13 @@ class cornerDetrctor():
     DILATION_KERNEL_SIZE = 3
 
     def __init__(self) -> None:
-        pass
+        self.corners = None
+
+    def cornerRunningavg(self, cornerPoints:np.ndarray) -> np.ndarray:
+        if self.corners is None:
+            self.corners = cornerPoints
+        else:
+            self.corners = ((self.corners * 0.7) + (cornerPoints * 0.3)).astype(np.int32)
 
     def findCorners(self, imgBgr:np.ndarray):
         imgEdges = self.makeEdgeImage(imgBgr)
@@ -23,7 +29,9 @@ class cornerDetrctor():
         if (cornerPoints is not None and cornerPoints.shape[0] == 4):
             cornerPoints = self.orderPoints(cornerPoints)
 
-        return cornerPoints
+        self.cornerRunningavg(cornerPoints)
+
+        return self.corners
 
     def makeEdgeImage(self, imgBgr:np.ndarray) -> np.ndarray:
         # Convert to gray scale.
@@ -56,7 +64,7 @@ class cornerDetrctor():
         return cornerPoints
 
     def findLargestShapePoints(self, contours:np.ndarray):
-        PERIMETER_MARGIN_PERCENT = 0.02
+        PERIMETER_MARGIN_PERCENT = 0.04
         maxPerimeter = 0
         shapePoints = None
 
@@ -68,7 +76,7 @@ class cornerDetrctor():
                 shapePoints = cv2.approxPolyDP(contour, (PERIMETER_MARGIN_PERCENT * perimeter), False)
                 maxPerimeter = perimeter
 
-        print(f"{self.TAG} findLargestShapePoints: Largest shape point count: {shapePoints.shape[0]} (h) {shapePoints.shape[1]} (w)")
+        #print(f"{self.TAG} findLargestShapePoints: Largest shape point count: {shapePoints.shape[0]} (h) {shapePoints.shape[1]} (w)")
         return shapePoints
 
     def approxCornerPoints(self, shapePoints, img:np.ndarray):

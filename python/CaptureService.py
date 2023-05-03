@@ -27,26 +27,29 @@ class CaptureService:
         #Bitmap bitmapRgb = MatConverter.matToBitmap(matPerspectiveRgb)
         imgSegMap:np.ndarray = deeplab.segmentate(matPerspectiveRgb)
         print(f"{self.TAG} capture: Segmentation done.")
+        cv2.imshow("imgSegMap", imgSegMap)
 
         # Binarize a gray scale version of the image.
         imgWarpGray:np.ndarray = cv2.cvtColor(imgBgr, cv2.COLOR_BGR2GRAY)
         imgBinarized:np.ndarray = self.binarization.binarize(imgWarpGray)
+        cv2.imshow("imgBinarized", imgBinarized)
 
         # Remove segments before change detection.
-        currentModelCopy:np.ndarray = self.removeSegmentArea(imgBinarized, self.currentModel, imgSegMap, imgBgr)
-
+        currentModelCopy, imgBinarizedcopy = self.removeSegmentArea(imgBinarized, imgSegMap)
+        cv2.imshow("currentModelCopy", currentModelCopy)
+        cv2.imshow("imgBinarizedcopy", imgBinarizedcopy)
         # Change detection
-        imgPersistentChanges:np.ndarray = self.changeDetector.detectChanges(imgBinarized, currentModelCopy)
-
+        imgPersistentChanges:np.ndarray = self.changeDetector.detectChanges(imgBinarizedcopy, currentModelCopy)
+        cv2.imshow("imgPersistentChanges", imgPersistentChanges)
         # Update current model with persistent changes.
-        self.updateModel(imgBinarized, imgPersistentChanges)
+        self.updateModel(imgBinarizedcopy, imgPersistentChanges)
         return self.currentModel
 
     
 
     # Removes segment area from image
-    def removeSegmentArea(self, binarizedImg:np.ndarray, currentModel:np.ndarray, imgSegMap:np.ndarray, imgPerspective:np.ndarray) -> np.ndarray:
-        currentModelCopy:np.ndarray = currentModel.copy()
+    def removeSegmentArea(self, binarizedImg:np.ndarray, imgSegMap:np.ndarray):
+        # currentModelCopy:np.ndarray = self.currentModel.copy()
 
         startTime = (time.time() / 1000)
 
@@ -62,12 +65,12 @@ class CaptureService:
         # binarizedImg.put(0, 0, bufferBinarized)
         # currentModelCopy.put(0, 0, bufferModel)
 
-        binarizedImg = cv2.bitwise_and(binarizedImg, binarizedImg, mask=imgSegMap)
-        currentModelCopy = cv2.bitwise_and(currentModelCopy, currentModelCopy, mask=imgSegMap)
+        imgBinarizedcopy = cv2.bitwise_and(binarizedImg, cv2.bitwise_not(imgSegMap))
+        currentModelCopy = cv2.bitwise_and(self.currentModel, imgSegMap)
 
         endTime = (time.time() / 1000)
         print(f"Remove segment loop took: {(endTime - startTime)} milliseconds")
-        return currentModelCopy
+        return currentModelCopy, imgBinarizedcopy
     
 
     def updateModel(self, imgBinarized:np.ndarray, imgPersistentChanges:np.ndarray) -> None:
@@ -84,8 +87,8 @@ class CaptureService:
 
         # self.currentModel.put(0, 0, bufferModel)
 
-        self.currentModel = cv2.bitwise_and(self.currentModel, self.currentModel, mask=cv2.bitwise_not(imgPersistentChanges))
-        imgBinarized = cv2.bitwise_and(imgBinarized, imgBinarized, mask=imgPersistentChanges)
+        self.currentModel = cv2.bitwise_and(self.currentModel, imgPersistentChanges)
+        imgBinarized = cv2.bitwise_and(imgBinarized, cv2.bitwise_not(imgPersistentChanges))
         self.currentModel = cv2.bitwise_or(self.currentModel, imgBinarized)
 
         endTime = (time.time() / 1000)
