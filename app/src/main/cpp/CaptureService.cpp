@@ -30,7 +30,7 @@ public:
         cv::Mat imgBinarized = Binarization.binarize(imgWarpGray);
 
         // Remove segments before change detection.
-        cv::Mat currentModelCopy = removeSegmentArea(imgSegMap);
+        cv::Mat currentModelCopy = removeSegmentArea(imgBinarized, imgSegMap);
 
         // Change detection
         cv::Mat imgPersistentChanges = ChangeDetector.detectChanges(imgBinarized, currentModelCopy);
@@ -41,12 +41,13 @@ public:
     }
 
     // Removes segment area from image
-    cv::Mat removeSegmentArea(const cv::Mat& imgSegMap) { //TODO something seems wrong
+    cv::Mat removeSegmentArea(cv::Mat& imgBinarized, const cv::Mat& imgSegMap) { //TODO something seems wrong
         cv::Mat currentModelCopy = currentModel.clone();
 
         auto startTime = (double)cv::getTickCount();
 
-        currentModelCopy = currentModelCopy & imgSegMap;
+        imgBinarized &= ~imgSegMap;
+        currentModelCopy &= imgSegMap;
 
         auto endTime = (double)cv::getTickCount();
         std::cout << "Remove segment loop took: " << (endTime - startTime) / cv::getTickFrequency() << " milliseconds" << std::endl;
@@ -56,8 +57,8 @@ public:
     void updateModel(cv::Mat imgBinarized, const cv::Mat& imgPersistentChanges) {
         auto startTime = (double)cv::getTickCount();
 
-        currentModel = currentModel & ~imgPersistentChanges;
-        imgBinarized = imgBinarized & imgPersistentChanges;
+        currentModel = currentModel & imgPersistentChanges;
+        imgBinarized = imgBinarized & ~imgPersistentChanges;
         currentModel = currentModel | imgBinarized;
 
         auto endTime = (double)cv::getTickCount();

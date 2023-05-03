@@ -1,4 +1,4 @@
-# https:#github.com/Chr1ll3D/real-time-whiteboard-app-main/blob/master/app/src/main/java/com/whiteboardapp/core/pipeline/ChangeDetector.java
+# https://github.com/Chr1ll3D/real-time-whiteboard-app-main/blob/master/app/src/main/java/com/whiteboardapp/core/pipeline/ChangeDetector.java
 
 import cv2
 import numpy as np
@@ -12,9 +12,9 @@ class changeDetector():
     # NB: cv2.Mats' should be binary images ie. 1 channel
     def detectChanges(self, img1:np.ndarray, img2:np.ndarray) -> cv2.Mat:
 
-        currentImgChanges:np.ndarray = cv2.absdiff(img1, img2)
-
-        imgPersistentChanges = self.getPersistentChanges(self.prevImgChanges, currentImgChanges, img1.shape)
+        currentImgChanges:np.ndarray = cv2.absdiff(img1, img2).astype(np.uint8)
+        cv2.imshow("currentImgChanges", currentImgChanges)
+        imgPersistentChanges = self.getPersistentChanges(self.prevImgChanges, currentImgChanges)
 
         self.prevImgChanges = currentImgChanges
 
@@ -22,7 +22,7 @@ class changeDetector():
     
 
     #Returns image with persistent changes if any. Result image will be black background with white changes.
-    def getPersistentChanges(self, prevImgChanges:np.ndarray, currentImgChanges:np.ndarray, size:tuple) -> np.ndarray:
+    def getPersistentChanges(self, prevImgChanges:np.ndarray, currentImgChanges:np.ndarray) -> np.ndarray:
 
         # imgPersistentChanges:np.ndarray = np.zeros(size, np.uint8)
 

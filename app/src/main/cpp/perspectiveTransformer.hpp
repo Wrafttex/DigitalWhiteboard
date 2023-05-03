@@ -47,14 +47,14 @@ public:
         // Perform perspective transformation.
         // Note: The given width and height are for cropping only i.e. does not affect how image is transformed.
         cv::Mat imgPerspective;
-        cv::warpPerspective(imgRgb, imgPerspective, perspectiveMatrix, cv::Size(maxHeight, maxWidth));
+        cv::warpPerspective(imgRgb, imgPerspective, perspectiveMatrix, cv::Size(maxWidth, maxHeight));
 
         cv::Mat croppedMat = cropAndResize(imgPerspective, CROP_MARGIN);
 
         return croppedMat;
     }
 
-    cv::Mat cropAndResize(cv::Mat& imgPerspective, const int& cropMargin){
+    cv::Mat cropAndResize(cv::Mat& imgPerspective, const int& cropMargin){ //TODO check if this is correct
         cv::Mat croppedMat = imgPerspective(cv::Rect(cropMargin, cropMargin, imgPerspective.cols - cropMargin, imgPerspective.rows - cropMargin));
         cv::resize(croppedMat, croppedMat, imgPerspective.size());
         return croppedMat;

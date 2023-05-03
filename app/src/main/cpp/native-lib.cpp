@@ -191,3 +191,11 @@ JNIEXPORT auto JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) -> jint {
 
     return JNI_VERSION_1_6;
 }
+
+/*
+https://stackoverflow.com/questions/51613950/kotlin-ndk-and-c-interactions
+https://medium.com/tompee/android-ndk-jni-primer-and-cheat-sheet-18dd006ec07f
+https://developer.android.com/training/articles/perf-jni#kotlin
+https://kotlinlang.org/docs/object-declarations.html#data-objects
+https://developer.android.com/ndk/samples/sample_hellojni.html
+*/

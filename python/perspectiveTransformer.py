@@ -51,8 +51,8 @@ class perspectiveTransformer():
 
         #	Perform perspective transformation.
         #	Note: The given width and height are for cropping only i.e. does not affect how image is transformed.
-        imgPerspective = cv2.warpPerspective(imgRgb, perspectiveMatrix, (maxHeight, maxWidth))
-
+        imgPerspective = cv2.warpPerspective(imgRgb, perspectiveMatrix, (maxWidth, maxHeight))
+        # cv2.imshow("imgPerspective", imgPerspective)
         croppedMat = self.cropAndResize(imgPerspective, self.CROP_MARGIN)
 
         return croppedMat
@@ -60,4 +60,4 @@ class perspectiveTransformer():
     # Crops image according to specified margin.
     def cropAndResize(self, imgPerspective:np.ndarray, cropMargin:int) -> np.ndarray:
         croppedMat = imgPerspective[cropMargin:imgPerspective.shape[0] - cropMargin, cropMargin:imgPerspective.shape[1] - cropMargin]
-        return cv2.resize(croppedMat, (imgPerspective.shape[0], imgPerspective.shape[1]))
+        return cv2.resize(croppedMat, (imgPerspective.shape[1], imgPerspective.shape[0]))

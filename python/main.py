@@ -34,7 +34,7 @@ class CaptureActivity:
                 self.cs = CaptureService(imgWarp.shape[0], imgWarp.shape[1])
             currentModel = self.cs.capture(imgWarp)
             if currentModel is not None:
-                cv2.imshow("Current Model", currentModel)
+                cv2.imshow("Current Model (final)", currentModel)
     
 if __name__ == "__main__":
     ca = CaptureActivity()
@@ -50,7 +50,7 @@ if __name__ == "__main__":
             else:    
                 out = ca.analyzeImage(frame)
 
-        cv2.imshow("Webcam", frame)
+            cv2.imshow("Webcam", frame)
 
         key = cv2.waitKey(1)
         if key == 27:

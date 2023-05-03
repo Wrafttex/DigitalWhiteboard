@@ -1,4 +1,4 @@
-# https:#github.com/Chr1ll3D/real-time-whiteboard-app-main/blob/master/app/src/main/java/com/whiteboardapp/core/pipeline/Segmentator.java
+# https://github.com/Chr1ll3D/real-time-whiteboard-app-main/blob/master/app/src/main/java/com/whiteboardapp/core/pipeline/Segmentator.java
 
 import cv2
 import numpy as np
@@ -67,6 +67,10 @@ class segmentator():
 
         fullTimeExecutionTime = (time.time() / 1000) - fullTimeExecutionTime
         print(f"{self.TAG} Total time in segmentation step: {fullTimeExecutionTime} ms")
+
+        cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20)), iterations=15, dst=mask)
+
+
         return mask
 
 if __name__ == "__main__":
