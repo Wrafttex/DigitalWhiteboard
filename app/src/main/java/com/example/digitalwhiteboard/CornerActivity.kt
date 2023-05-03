@@ -1,10 +1,12 @@
 package com.example.digitalwhiteboard
 
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.os.Bundle
 import android.util.Size
+import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
@@ -23,25 +25,19 @@ import androidx.core.content.ContextCompat
 import com.example.digitalwhiteboard.databinding.ActivityCornerBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import android.content.Intent
 
-class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
+class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouchListener {
     private lateinit var binding: ActivityCornerBinding
     private lateinit var cameraExecutor: ExecutorService
-    var srcBitmap: Bitmap? = null
-    var dstBitmap: Bitmap? = null
     private lateinit var testImage: PreviewView
     private lateinit var imageView: ImageView
     private lateinit var drawingOverlay: SurfaceView
     private lateinit var overlayHolder: SurfaceHolder
     private lateinit var autoButton: Button
-    var autoCornerBool: Boolean = false
-    var startBool: Boolean = false
-    var testBool: Boolean = false
+    private var autoCornerBool: Boolean = false
     private var cornerPaint: Paint = Paint()
     private var boxPaint: Paint = Paint()
-    private var corners: Array<FloatArray> = Array(4){ FloatArray(2) }
-    private lateinit var drawing: Bitmap
+    private var corners: Array<Corner> = Array(4) { Corner(0f, 0f) }
     private var path: Path = Path()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,7 +55,8 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         drawingOverlay.setZOrderOnTop(true)
         overlayHolder = drawingOverlay.holder
         overlayHolder.setFormat(PixelFormat.TRANSPARENT)
-        val btn_set = findViewById<Button>(R.id.manualCorner)
+        drawingOverlay.setOnTouchListener(this)
+        val btn_set = findViewById<Button>(R.id.next)
         btn_set.setOnClickListener(){
             val intent = Intent (this@CornerActivity, DrawActivity::class.java)
             /* Use this to send data from one activity to another, it can take basically all type value  */
@@ -158,37 +155,63 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     }
 
     private fun setCorners() {
-        val widthMargin = drawingOverlay.width / 1f
-        val heightMargin = drawingOverlay.height / 1f
-        corners[0][0] = widthMargin
-        corners[0][1] = heightMargin
-        corners[1][0] = widthMargin
-        corners[1][1] = (drawingOverlay.height - heightMargin)
-        corners[2][0] = (drawingOverlay.width - widthMargin)
-        corners[2][1] = (drawingOverlay.height - heightMargin)
-        corners[3][0] = (drawingOverlay.width - widthMargin)
-        corners[3][1] = heightMargin
+        val widthMargin = drawingOverlay.width / 4f
+        val heightMargin = drawingOverlay.height / 4f
+        corners[0].x = widthMargin
+        corners[0].y = heightMargin
+        corners[1].x = widthMargin
+        corners[1].y = (drawingOverlay.height - heightMargin)
+        corners[2].x = (drawingOverlay.width - widthMargin)
+        corners[2].y = (drawingOverlay.height - heightMargin)
+        corners[3].x = (drawingOverlay.width - widthMargin)
+        corners[3].y = heightMargin
     }
 
     private fun updateCorners(newCorners: Array<FloatArray>) {
         for (i in 0..3) {
-            for (j in 0..1) {
-                corners[i][j] = newCorners[i][j]
-            }
+            corners[i].x = newCorners[i][0]
+            corners[i].y = newCorners[i][1]
         }
         drawBoxAndCorners()
     }
 
+
+    override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> for (corner in corners) {
+                if (corner.isTouched(event.x, event.y)) {
+                    corner.actionDown = true
+                    break
+                }
+            }
+            MotionEvent.ACTION_MOVE -> for (corner in corners) {
+                if (corner.actionDown) {
+                    corner.x = if (event.x > drawingOverlay.width) drawingOverlay.width.toFloat() else if (event.x < 0f) 0f else event.x
+                    corner.y = if (event.y > drawingOverlay.height) drawingOverlay.height.toFloat() else if (event.y < 0f) 0f else event.y
+                    drawBoxAndCorners()
+                }
+            }
+            MotionEvent.ACTION_UP -> for (corner in corners) {
+                corner.actionDown = false
+            }
+        }
+        return true
+    }
+
     private fun drawBoxAndCorners() {
+        // var canvas = Canvas(drawing)
         val canvas = overlayHolder.lockCanvas()
-        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
         path.reset()
-        path.moveTo(corners[3][0], corners[3][1])
-        for (Array in corners) {
-            canvas.drawCircle(Array[0], Array[1], 20f, cornerPaint)
-            path.lineTo(Array[0], Array[1])
+        path.moveTo(corners[3].x, corners[3].y)
+        for (corner in corners) {
+            canvas.drawCircle(corner.x, corner.y, 20f, cornerPaint)
+            path.lineTo(corner.x, corner.y)
         }
         canvas.drawPath(path, boxPaint)
+        // canvas = overlayHolder.lockCanvas(null)
+        // canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+        // canvas.drawBitmap(drawing, 0f, 0f, null)
         overlayHolder.unlockCanvasAndPost(canvas)
     }
 
@@ -198,7 +221,13 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     }
 
     fun autoDetectCorners(view: View) {
-        autoCornerBool = autoCornerBool == false
+        if (!autoCornerBool) {
+            autoCornerBool = true
+            autoButton.text = "ON"
+        } else {
+            autoCornerBool = false
+            autoButton.text = "OFF"
+        }
     }
 
     external fun myFlip(bitmap: Bitmap, bitmapOut: Bitmap)
