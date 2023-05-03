@@ -36,15 +36,15 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
     private lateinit var imageView: ImageView
     private lateinit var sldSigma: SeekBar
     private lateinit var startButton: Button
-    var startBoolean: Boolean = false
-    lateinit var corners: Array<FloatArray>
+    private var startBoolean: Boolean = false
+    private lateinit var corners: Array<Corner>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDrawBinding.inflate(layoutInflater)
         val intent = intent
 
         /*use this to get data from another activity, tho get depends on type value*/
-        corners = intent.getSerializableExtra("CornerValue") as Array<FloatArray> // TODO: getSerializableExtra is a deprecated method
+        corners = intent.getSerializableExtra("CornerValue") as Array<Corner> // TODO: getSerializableExtra is a deprecated method
         setContentView(binding.root)
         cameraExecutor = Executors.newSingleThreadExecutor()
         requestPermission()
