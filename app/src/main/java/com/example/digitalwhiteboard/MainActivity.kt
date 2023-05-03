@@ -20,14 +20,13 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.example.digitalwhiteboard.databinding.ActivityMainBinding
-import org.pytorch.IValue
-import org.pytorch.Module
-import org.pytorch.Tensor
-import org.pytorch.torchvision.TensorImageUtils
+//import org.pytorch.IValue
+//import org.pytorch.Module
+//import org.pytorch.Tensor
+//import org.pytorch.torchvision.TensorImageUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.lang.Float.max
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -37,12 +36,12 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var cameraExecutor: ExecutorService
-    var srcBitmap: Bitmap? = null
-    var dstBitmap: Bitmap? = null
+    private var srcBitmap: Bitmap? = null
+    private var dstBitmap: Bitmap? = null
     private lateinit var testImage: PreviewView
     private lateinit var imageView: ImageView
     private lateinit var sldSigma: SeekBar
-    var module: Module? = null
+    //private var module: Module? = null
     private var testBitmap: Bitmap? = null
     private val TAG = "AssetUtils"
 
@@ -84,6 +83,7 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
         imageView = findViewById(R.id.imageView)
         sldSigma.setOnSeekBarChangeListener(this)
 
+        /**
         try {
             //val inputStream: InputStream =  assetAsIS("app/src/main/res/drawable-nodpi/testimage2.png").byteInputStream()
             //testBitmap = BitmapFactory.decodeStream(inputStream)
@@ -94,7 +94,7 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
             e.printStackTrace()
         }
 
-        /**
+
         val inputTensor: Tensor = TensorImageUtils.bitmapToFloat32Tensor(testBitmap, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB)
         val outputTensor: Tensor = module!!.forward(IValue.from(inputTensor)).toTensor()
 
@@ -166,25 +166,26 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
             }
     }
 
-    fun Bitmap.rotate(degrees: Float): Bitmap {
+    private fun Bitmap.rotate(degrees: Float): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees) }
         return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
     fun btnFlipOnClick(view: View) {
-        /**
+
         if (srcBitmap == null && dstBitmap == null) {
             srcBitmap = testImage.bitmap
             dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
         }
         myFlip(srcBitmap!!,srcBitmap!!)
         this.doBlur()
-**/
+        /**
         val inputTensor: Tensor = TensorImageUtils.bitmapToFloat32Tensor(testBitmap, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB)
         val outputTensor: Tensor = module!!.forward(IValue.from(inputTensor)).toTensor()
 
         val output: FloatArray = outputTensor.dataAsFloatArray
         println(output)
+         **/
     }
 
     private fun doBlur() {
@@ -210,8 +211,8 @@ class MainActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener {
     override fun onStartTrackingTouch(seekBar: SeekBar?) {}
     override fun onStopTrackingTouch(seekBar: SeekBar?) {}
     external fun stringFromJNI(): String
-    external fun myFlip(bitmap: Bitmap, bitmapOut: Bitmap)
-    external fun myBlur(bitmap: Bitmap, bitmapOut: Bitmap, sigma: Float)
+    private external fun myFlip(bitmap: Bitmap, bitmapOut: Bitmap)
+    private external fun myBlur(bitmap: Bitmap, bitmapOut: Bitmap, sigma: Float)
 
     companion object {
         // Used to load the 'digitalwhiteboard' library on application startup.
