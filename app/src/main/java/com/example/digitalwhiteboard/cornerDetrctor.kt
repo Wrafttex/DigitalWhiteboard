@@ -6,7 +6,7 @@ class cornerDetrctor {
 
     companion object {
         init {
-            System.loadLibrary("native-lib")
+            System.loadLibrary("digitalwhiteboard")
         }
     }
 }

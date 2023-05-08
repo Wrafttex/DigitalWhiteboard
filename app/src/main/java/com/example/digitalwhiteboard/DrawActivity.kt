@@ -216,7 +216,7 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
     companion object {
         // Used to load the 'digitalwhiteboard' library on application startup.
         init {
-            System.loadLibrary("native-lib")
+            System.loadLibrary("digitalwhiteboard")
         }
     }
 }

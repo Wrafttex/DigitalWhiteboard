@@ -206,7 +206,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     companion object {
         // Used to load the 'digitalwhiteboard' library on application startup.
         init {
-            System.loadLibrary("native-lib")
+            System.loadLibrary("digitalwhiteboard")
         }
     }
 

@@ -5,7 +5,7 @@ class captureActivity {
 
     companion object {
         init {
-            System.loadLibrary("native-lib")
+            System.loadLibrary("digitalwhiteboard")
         }
     }
 }

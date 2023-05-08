@@ -121,14 +121,14 @@ extern "C" {
         return env->NewStringUTF(hello.c_str());
     }
 
-    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_MainActivity_myFlip(JNIEnv* env, jobject, jobject bitmapIn, jobject bitmapOut) {
+    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_CornerActivity_myFlip(JNIEnv* env, jobject, jobject bitmapIn, jobject bitmapOut) {
         Mat src;
         bitmapToMat(env, bitmapIn, src, false);
         myFlip(src);
         matToBitmap(env, src, bitmapOut, false);
     }   
 
-    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_MainActivity_myBlur(JNIEnv * env, jobject, jobject bitmapIn, jobject bitmapOut, jfloat sigma) {
+    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_DrawActivity_myBlur(JNIEnv * env, jobject, jobject bitmapIn, jobject bitmapOut, jfloat sigma) {
         Mat src;
         bitmapToMat(env, bitmapIn, src, false);
         myBlur(src, sigma);
@@ -169,29 +169,37 @@ extern "C" {
     }
 }
 
+/*
 JNIEXPORT auto JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) -> jint {
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
 
-    jclass clazz = env->FindClass("com/example/digitalwhiteboard");
-    if (clazz == nullptr) return JNI_ERR;
+    jclass captureClass = env->FindClass("com/example/digitalwhiteboard/captureActivity");
+    jclass cornerClass = env->FindClass("com/example/digitalwhiteboard/cornerDetrctor");
 
-    static const JNINativeMethod methods[] = {
+    if (captureClass == nullptr || cornerClass == nullptr) return JNI_ERR;
+
+    static const JNINativeMethod captureMethods[] = {
         {"createNativeObject", "()J", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity)},
         {"destroyNativeObject", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_destroyNativeCaptureActivity)},
-        {"capture", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_capture)},
+        {"capture", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_capture)}
+    };
+    static const JNINativeMethod cornerMethods[] = {
         {"createNativeObject", "()J", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_createNativeObject)},
         {"destroyNativeObject", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_destroyNativeObject)},
-        {"findCorners", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners)},
+        {"findCorners", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners)}
     };
 
-    if (env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod)) != JNI_OK) {
+    if (env->RegisterNatives(captureClass, captureMethods, sizeof(captureMethods) / sizeof(JNINativeMethod)) != JNI_OK) {
+        return JNI_ERR;
+    }
+    if (env->RegisterNatives(cornerClass, cornerMethods, sizeof(cornerMethods) / sizeof(JNINativeMethod)) != JNI_OK) {
         return JNI_ERR;
     }
 
     return JNI_VERSION_1_6;
 }
-
+*/
 /*
 https://stackoverflow.com/questions/51613950/kotlin-ndk-and-c-interactions
 https://medium.com/tompee/android-ndk-jni-primer-and-cheat-sheet-18dd006ec07f
