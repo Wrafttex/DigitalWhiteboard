@@ -96,7 +96,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
                 cameraProvider.bindToLifecycle(
                     this,
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    previewUseCase,
+                    //previewUseCase,
                     imageAnalysisUseCase
                 )
             } catch (e: Exception) {

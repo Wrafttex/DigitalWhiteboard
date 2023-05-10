@@ -99,7 +99,7 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
                 cameraProvider.bindToLifecycle(
                     this,
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    previewUseCase,
+                    //previewUseCase,
                     imageAnalysisUseCase
                 )
             } catch (e: Exception) {
@@ -109,15 +109,15 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
         )
     }
     private fun buildPreviewUseCase(): Preview {
-        return Preview.Builder()
+        return Preview.Builder().setTargetResolution(Size(1280,720))
             .build().also { it.setSurfaceProvider(binding.viewFinder?.surfaceProvider) }
     }
 
     private fun buildImageAnalysisUseCase(): ImageAnalysis {
         Log.v("buildImageAnalysisUseCase","inside buildImageAnalysisUseCase")
         return ImageAnalysis.Builder()
-            .setTargetResolution(Size(imageView.measuredWidth, imageView.measuredHeight))
-            //.setTargetResolution(Size(1280, 720))
+            //.setTargetResolution(Size(imageView.measuredWidth, imageView.measuredHeight))
+            .setTargetResolution(Size(1998,1080))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also { it.setAnalyzer(cameraExecutor, this) }
     }
@@ -144,18 +144,18 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
     override fun analyze(image: ImageProxy) {
         //println("we're inside analyze")
         val bitmap = image.toBitmap()
-        //val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(270f) else bitmap
-        val rotatedImage = bitmap
+        val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
+        //val rotatedImage = bitmap
         val finalImage = rotatedImage.copy(rotatedImage.config, true)
         //myFlip(rotatedImage, finalImage)
         if (!startBoolean){
             runOnUiThread {
-                //binding.imageView.setVisibility(View.VISIBLE)
-                //binding.imageView.setImageBitmap(rotatedImage)
+                binding.imageView.setVisibility(View.VISIBLE)
+                binding.imageView.setImageBitmap(rotatedImage)
             }
         }
         else {
-            //binding.imageView.setVisibility(View.INVISIBLE)
+            binding.imageView.setVisibility(View.INVISIBLE)
         }
         image.close()
     }
