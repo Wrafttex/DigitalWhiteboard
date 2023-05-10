@@ -113,6 +113,40 @@ auto convertToJavaPointList(JNIEnv* env, const std::vector<cv::Point>& points) -
     return listObj;
 }
 
+auto convertToJavaFloatArray(JNIEnv* env, const std::vector<cv::Point>& points) -> jobject {
+    jclass floatArrayClass = env->FindClass("[F");
+    jobjectArray floatArray = env->NewObjectArray(points.size(), floatArrayClass, nullptr);
+    for (int i = 0; i < points.size(); i++) {
+        jfloatArray point = env->NewFloatArray(2);
+        jfloat *pointPtr = env->GetFloatArrayElements(point, nullptr);
+        pointPtr[0] = points[i].x;
+        pointPtr[1] = points[i].y;
+        env->ReleaseFloatArrayElements(point, pointPtr, 0);
+        env->SetObjectArrayElement(floatArray, i, point);
+    }
+    return floatArray;
+}
+
+jfloatArray convertToJavaArray(JNIEnv* env, const std::vector<cv::Point>& points) {
+    jfloatArray array = env->NewFloatArray(points.size() * 2);
+    jfloat* data = env->GetFloatArrayElements(array, nullptr);
+    for (int i = 0; i < points.size(); i++) {
+        data[i * 2] = points[i].x;
+        data[i * 2 + 1] = points[i].y;
+    }
+    env->ReleaseFloatArrayElements(array, data, 0);
+    return array;
+}
+
+void vectorToJFloatArray(JNIEnv* env, std::vector<cv::Point>& points, jfloatArray fArrOut) {
+    jfloat* data =  env->GetFloatArrayElements(fArrOut, nullptr);
+    for (int i = 0; i < points.size(); i++) {
+        data[i * 2] = points[i].x;
+        data[i * 2 + 1] = points[i].y;
+    }
+    env->ReleaseFloatArrayElements(fArrOut, data, 0);
+}
+
 extern "C" {
     JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_MainActivity_stringFromJNI(
         JNIEnv* env,
@@ -135,23 +169,19 @@ extern "C" {
         matToBitmap(env, src, bitmapOut, false);
     }
 
-    JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity(JNIEnv * env, jobject thiz, jlong cornersPtr, jlong imgBgrPtr)->jlong {
+    JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity(JNIEnv * env, jobject obj, jlong cornersPtr, jlong imgBgrPtr)->jlong {
         return reinterpret_cast<jlong>(new captureActivity(*reinterpret_cast<std::vector<cv::Point>*>(cornersPtr), *reinterpret_cast<cv::Mat*>(imgBgrPtr)));
     }
 
-    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_captureActivity_destroyNativeCaptureActivity(JNIEnv * env, jobject thiz, jlong ptr) {
+    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_captureActivity_destroyNativeCaptureActivity(JNIEnv * env, jobject obj, jlong ptr) {
         delete reinterpret_cast<captureActivity*>(ptr);
     }
 
-    JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_captureActivity_capture(JNIEnv * env, jobject thiz, jlong ptr, jlong imgBgrPtr)->jobject {
-        cv::Mat imgBgr = *reinterpret_cast<cv::Mat*>(imgBgrPtr);
-        cv::Mat imgCaptured = reinterpret_cast<captureActivity*>(ptr)->capture(imgBgr);
-        if (!imgCaptured.empty()) {
-            jobject bitmap = nullptr;
-            matToBitmap(env, imgCaptured, bitmap, false);
-            return bitmap;
-        }
-        return nullptr;
+    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_captureActivity_capture(JNIEnv * env, jobject obj, jlong ptr, jobject bitmapIn, jobject bitmapOut){
+        Mat dst;
+        bitmapToMat(env, bitmapIn, dst, false);
+        cv::Mat imgCaptured = reinterpret_cast<captureActivity*>(ptr)->capture(dst);
+        matToBitmap(env, imgCaptured, bitmapOut, false);
     }
 
     JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_cornerDetrctor_createNativeObject(JNIEnv * env, jobject obj)->jlong {
@@ -162,10 +192,26 @@ extern "C" {
         delete reinterpret_cast<cornerDetrctor*>(ptr);
     }
 
-    JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners(JNIEnv * env, jobject obj, jlong ptr, jlong imgAddr)->jobject {
-        cv::Mat& img = *reinterpret_cast<cv::Mat*>(imgAddr);
-        std::vector<cv::Point> corners = reinterpret_cast<cornerDetrctor*>(ptr)->findCorners(std::move(img));
-        return convertToJavaPointList(env, corners);
+    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners(JNIEnv * env, jobject obj, jobject bitmapIn, jfloatArray fArrOut) {
+        //cv::Mat& img = *reinterpret_cast<cv::Mat*>(imgAddr);
+        /*
+        AndroidBitmapInfo info;
+        void* srcPixels = 0;
+        if (AndroidBitmap_getInfo(env, bitmapIn, &info) < 0) throw std::runtime_error("No info found");
+
+        if (AndroidBitmap_lockPixels(env, bitmapIn, &srcPixels) < 0) throw std::runtime_error("No pixel found");
+
+
+        int x = info.width;
+        int y = info.height;
+        */
+
+        Mat dst;
+        bitmapToMat(env, bitmapIn, dst, false);
+        //std::vector<cv::Point> corners = reinterpret_cast<cornerDetrctor*>(ptr)->findCorners(std::move(dst));
+        std::vector<cv::Point> corners = {cv::Point{0,0}, cv::Point{0,200}, cv::Point{200,200}, cv::Point{200,0}};
+        vectorToJFloatArray(env, corners, fArrOut);
+        //return convertToJavaArray(env, corners);
     }
 }
 
@@ -179,20 +225,22 @@ JNIEXPORT auto JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) -> jint {
 
     if (captureClass == nullptr || cornerClass == nullptr) return JNI_ERR;
 
-    static const JNINativeMethod captureMethods[] = {
-        {"createNativeObject", "()J", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity)},
-        {"destroyNativeObject", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_destroyNativeCaptureActivity)},
-        {"capture", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_capture)}
-    };
     static const JNINativeMethod cornerMethods[] = {
         {"createNativeObject", "()J", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_createNativeObject)},
         {"destroyNativeObject", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_destroyNativeObject)},
-        {"findCorners", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners)}
+        {"findCorners", "(J)[F", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners)}
+    };
+
+    static const JNINativeMethod captureMethods[] = {
+            {"createNativeObject", "()J", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity)},
+            {"destroyNativeObject", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_destroyNativeCaptureActivity)},
+            {"capture", "(J)V", reinterpret_cast<void*>(Java_com_example_digitalwhiteboard_captureActivity_capture)}
     };
 
     if (env->RegisterNatives(captureClass, captureMethods, sizeof(captureMethods) / sizeof(JNINativeMethod)) != JNI_OK) {
         return JNI_ERR;
     }
+
     if (env->RegisterNatives(cornerClass, cornerMethods, sizeof(cornerMethods) / sizeof(JNINativeMethod)) != JNI_OK) {
         return JNI_ERR;
     }

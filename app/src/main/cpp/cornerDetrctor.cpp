@@ -40,7 +40,7 @@ std::vector<cv::Point> cornerDetrctor::getCorners(const cv::Mat& imgEdges) {
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(imgEdges, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    if (contours.empty()) return {};
+    if (contours.empty()) throw std::runtime_error("No contours found");
 
     std::vector<cv::Point> shapePoints = findLargestShapePoints(contours);
     std::vector<cv::Point> cornerPoints = approxCornerPoints(shapePoints, imgEdges);

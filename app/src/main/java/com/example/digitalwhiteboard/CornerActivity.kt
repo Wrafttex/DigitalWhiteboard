@@ -24,6 +24,7 @@ import com.example.digitalwhiteboard.databinding.ActivityCornerBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.content.Intent
+import com.example.digitalwhiteboard.cornerDetrctor
 
 class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     private lateinit var binding: ActivityCornerBinding
@@ -43,6 +44,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     private var corners: Array<FloatArray> = Array(4){ FloatArray(2) }
     private lateinit var drawing: Bitmap
     private var path: Path = Path()
+    private  var cornerDetc: cornerDetrctor = cornerDetrctor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,24 +124,27 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     }
 
     override fun analyze(image: ImageProxy) {
+        val bitmap = image.toBitmap()
+        val newCorners: FloatArray = FloatArray(8)
         if (autoCornerBool) {
-            val newCorners: Array<FloatArray> = Array(4){ FloatArray(2) }
-            newCorners[0][0] = 1280f
-            newCorners[0][1] = 960f
-            newCorners[1][0] = 1280f
-            newCorners[1][1] = 0f
-            newCorners[2][0] = 0f
-            newCorners[2][1] = 0f
-            newCorners[3][0] = 0f
-            newCorners[3][1] = 960f
+            //val newCorners: Array<FloatArray> = Array(4){ FloatArray(2) }
+            //newCorners[0][0] = 1280f
+            //newCorners[0][1] = 960f
+            //newCorners[1][0] = 1280f
+            //newCorners[1][1] = 0f
+            //newCorners[2][0] = 0f
+            //newCorners[2][1] = 0f
+            //newCorners[3][0] = 0f
+            //newCorners[3][1] = 960f
+            cornerDetc.findCorners(bitmap, newCorners)
             updateCorners(newCorners)
         }
-        val bitmap = image.toBitmap()
+
         val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
-        val finalImage = rotatedImage.copy(rotatedImage.config, true)
-        myFlip(rotatedImage, finalImage)
+        //val finalImage = rotatedImage.copy(rotatedImage.config, true)
+        //myFlip(rotatedImage, finalImage)
         runOnUiThread {
-            binding.imageView?.setImageBitmap(finalImage)
+            binding.imageView?.setImageBitmap(rotatedImage)
         }
         image.close()
     }
@@ -170,11 +175,10 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         corners[3][1] = heightMargin
     }
 
-    private fun updateCorners(newCorners: Array<FloatArray>) {
+    private fun updateCorners(newCorners: FloatArray) {
         for (i in 0..3) {
-            for (j in 0..1) {
-                corners[i][j] = newCorners[i][j]
-            }
+            corners[i][0] = newCorners[i*2]
+            corners[i][1] = newCorners[(i*2)+1]
         }
         drawBoxAndCorners()
     }

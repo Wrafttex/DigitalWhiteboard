@@ -24,10 +24,6 @@ add_library(${TARGET} SHARED
         ${pytorch_testapp_cpp_DIR}/CaptureService.cpp
         )
 
-#add_library (native-lib SHARED
-#        ${pytorch_testapp_cpp_DIR}/native-lib.cpp
-#        )
-
 
 file(GLOB PYTORCH_INCLUDE_DIRS "${build_DIR}/pytorch_android*.aar/headers")
 file(GLOB PYTORCH_LINK_DIRS "${build_DIR}/pytorch_android*.aar/jni/${ANDROID_ABI}")

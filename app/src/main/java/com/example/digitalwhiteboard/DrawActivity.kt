@@ -25,6 +25,7 @@ import com.example.digitalwhiteboard.databinding.ActivityDrawBinding
 import java.lang.Float.max
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.example.digitalwhiteboard.captureActivity
 
 class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, ImageAnalysis.Analyzer {
 
@@ -38,6 +39,7 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
     private lateinit var startButton: Button
     var startBoolean: Boolean = false
     lateinit var corners: Array<FloatArray>
+    //var capture: captureActivity = captureActivity()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDrawBinding.inflate(layoutInflater)
@@ -143,15 +145,16 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
 
     override fun analyze(image: ImageProxy) {
         //println("we're inside analyze")
-        val bitmap = image.toBitmap()
+        val bitmapIn = image.toBitmap()
+        val bitmapOut = bitmapIn
         //val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(270f) else bitmap
-        val rotatedImage = bitmap
-        val finalImage = rotatedImage.copy(rotatedImage.config, true)
+        //capture.capture(bitmapIn, bitmapOut)
+        //val finalImage = rotatedImage.copy(rotatedImage.config, true)
         //myFlip(rotatedImage, finalImage)
         if (!startBoolean){
             runOnUiThread {
                 //binding.imageView.setVisibility(View.VISIBLE)
-                //binding.imageView.setImageBitmap(rotatedImage)
+                //binding.imageView.setImageBitmap(bitmapOut)
             }
         }
         else {
@@ -209,8 +212,8 @@ class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, Image
      */
     override fun onStartTrackingTouch(seekBar: SeekBar?) {}
     override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-    external fun stringFromJNI(): String
-    external fun myFlip(bitmap: Bitmap, bitmapOut: Bitmap)
+    //external fun stringFromJNI(): String
+    //external fun myFlip(bitmap: Bitmap, bitmapOut: Bitmap)
     external fun myBlur(bitmap: Bitmap, bitmapOut: Bitmap, sigma: Float)
 
     companion object {
