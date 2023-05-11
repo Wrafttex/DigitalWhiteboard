@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <string>
+#include <vector>
 
 #include "android/bitmap.h"
 #include "opencvUtils.h"
@@ -96,48 +97,6 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
     }
 }
 
-auto convertToJavaPointList(JNIEnv* env, const std::vector<cv::Point>& points) -> jobject {
-    jclass listClass = env->FindClass("java/util/ArrayList");
-    jmethodID listInit = env->GetMethodID(listClass, "<init>", "()V");
-    jmethodID listAdd = env->GetMethodID(listClass, "add", "(Ljava/lang/Object;)Z");
-
-    jclass pointClass = env->FindClass("android/graphics/Point");
-    jmethodID pointInit = env->GetMethodID(pointClass, "<init>", "(II)V");
-
-    jobject listObj = env->NewObject(listClass, listInit);
-    for (cv::Point point : points) {
-        jobject pointObj = env->NewObject(pointClass, pointInit, point.x, point.y);
-        env->CallBooleanMethod(listObj, listAdd, pointObj);
-    }
-
-    return listObj;
-}
-
-auto convertToJavaFloatArray(JNIEnv* env, const std::vector<cv::Point>& points) -> jobject {
-    jclass floatArrayClass = env->FindClass("[F");
-    jobjectArray floatArray = env->NewObjectArray(points.size(), floatArrayClass, nullptr);
-    for (int i = 0; i < points.size(); i++) {
-        jfloatArray point = env->NewFloatArray(2);
-        jfloat *pointPtr = env->GetFloatArrayElements(point, nullptr);
-        pointPtr[0] = points[i].x;
-        pointPtr[1] = points[i].y;
-        env->ReleaseFloatArrayElements(point, pointPtr, 0);
-        env->SetObjectArrayElement(floatArray, i, point);
-    }
-    return floatArray;
-}
-
-jfloatArray convertToJavaArray(JNIEnv* env, const std::vector<cv::Point>& points) {
-    jfloatArray array = env->NewFloatArray(points.size() * 2);
-    jfloat* data = env->GetFloatArrayElements(array, nullptr);
-    for (int i = 0; i < points.size(); i++) {
-        data[i * 2] = points[i].x;
-        data[i * 2 + 1] = points[i].y;
-    }
-    env->ReleaseFloatArrayElements(array, data, 0);
-    return array;
-}
-
 void vectorToJFloatArray(JNIEnv* env, std::vector<cv::Point>& points, jfloatArray fArrOut) {
     jfloat* data =  env->GetFloatArrayElements(fArrOut, nullptr);
     for (int i = 0; i < points.size(); i++) {
@@ -145,6 +104,16 @@ void vectorToJFloatArray(JNIEnv* env, std::vector<cv::Point>& points, jfloatArra
         data[i * 2 + 1] = points[i].y;
     }
     env->ReleaseFloatArrayElements(fArrOut, data, 0);
+}
+
+std::vector<cv::Point>&& JFloatArrayToVector(JNIEnv* env, jfloatArray fArrIn) {
+    std::vector<cv::Point> points;
+    jfloat* data = env->GetFloatArrayElements(fArrIn, nullptr);
+    for (int i = 0; i < env->GetArrayLength(fArrIn); i += 2) {
+        points.emplace_back(data[i], data[i + 1]);
+    }
+    env->ReleaseFloatArrayElements(fArrIn, data, 0);
+    return std::move(points);
 }
 
 extern "C" {
@@ -169,8 +138,11 @@ extern "C" {
         matToBitmap(env, src, bitmapOut, false);
     }
 
-    JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity(JNIEnv * env, jobject obj, jlong cornersPtr, jlong imgBgrPtr)->jlong {
-        return reinterpret_cast<jlong>(new captureActivity(*reinterpret_cast<std::vector<cv::Point>*>(cornersPtr), *reinterpret_cast<cv::Mat*>(imgBgrPtr)));
+    JNIEXPORT jlong JNICALL Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity(JNIEnv * env, jobject obj, jfloatArray cornersPtr, jobject imgBgrPtr){
+        Mat dst;
+        bitmapToMat(env, imgBgrPtr, dst, false);
+        std::vector<cv::Point> corners = JFloatArrayToVector(env, cornersPtr);
+        return reinterpret_cast<jlong>(new captureActivity(corners, dst));
     }
 
     JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_captureActivity_destroyNativeCaptureActivity(JNIEnv * env, jobject obj, jlong ptr) {
@@ -184,7 +156,7 @@ extern "C" {
         matToBitmap(env, imgCaptured, bitmapOut, false);
     }
 
-    JNIEXPORT auto JNICALL Java_com_example_digitalwhiteboard_cornerDetrctor_createNativeObject(JNIEnv * env, jobject obj)->jlong {
+    JNIEXPORT jlong JNICALL Java_com_example_digitalwhiteboard_cornerDetrctor_createNativeObject(JNIEnv * env, jobject obj) {
         return reinterpret_cast<jlong>(new cornerDetrctor());
     }
 
@@ -192,26 +164,11 @@ extern "C" {
         delete reinterpret_cast<cornerDetrctor*>(ptr);
     }
 
-    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners(JNIEnv * env, jobject obj, jobject bitmapIn, jfloatArray fArrOut) {
-        //cv::Mat& img = *reinterpret_cast<cv::Mat*>(imgAddr);
-        /*
-        AndroidBitmapInfo info;
-        void* srcPixels = 0;
-        if (AndroidBitmap_getInfo(env, bitmapIn, &info) < 0) throw std::runtime_error("No info found");
-
-        if (AndroidBitmap_lockPixels(env, bitmapIn, &srcPixels) < 0) throw std::runtime_error("No pixel found");
-
-
-        int x = info.width;
-        int y = info.height;
-        */
-
+    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_cornerDetrctor_findCorners(JNIEnv * env, jobject obj, jlong ptr, jobject bitmapIn, jfloatArray fArrOut) {
         Mat dst;
         bitmapToMat(env, bitmapIn, dst, false);
-        //std::vector<cv::Point> corners = reinterpret_cast<cornerDetrctor*>(ptr)->findCorners(std::move(dst));
-        std::vector<cv::Point> corners = {cv::Point{0,0}, cv::Point{0,200}, cv::Point{200,200}, cv::Point{200,0}};
+        std::vector<cv::Point> corners = reinterpret_cast<cornerDetrctor*>(ptr)->findCorners(std::move(dst));
         vectorToJFloatArray(env, corners, fArrOut);
-        //return convertToJavaArray(env, corners);
     }
 }
 

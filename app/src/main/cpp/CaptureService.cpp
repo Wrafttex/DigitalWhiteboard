@@ -2,6 +2,10 @@
 #include "changeDetector.hpp"
 #include "segmentator.hpp"
 #include "perspectiveTransformer.hpp"
+#include <chrono>
+
+using std::chrono::duration;
+using clk = std::chrono::high_resolution_clock;
 
 class CaptureService {
 private:
@@ -19,10 +23,12 @@ public:
     cv::Mat capture(const cv::Mat& imgBgr) {
         // Segmentation
         std::cout << TAG << " capture: Segmentation started." << std::endl;
+        auto t0 = clk::now();
         cv::Mat matPerspectiveRgb;
         cv::cvtColor(imgBgr, matPerspectiveRgb, cv::COLOR_BGR2RGB);
         cv::Mat imgSegMap = Segmentator.segmentate(matPerspectiveRgb);
-        std::cout << TAG << " capture: Segmentation done." << std::endl;
+        auto t1 = clk::now();
+        std::cout << "segmentate took: " << duration<double, std::milli>(t1-t0).count() << " ms" << std::endl;
 
         // Binarize a gray scale version of the image.
         cv::Mat imgWarpGray;
@@ -44,24 +50,24 @@ public:
     cv::Mat removeSegmentArea(cv::Mat& imgBinarized, const cv::Mat& imgSegMap) { //TODO something seems wrong
         cv::Mat currentModelCopy = currentModel.clone();
 
-        auto startTime = (double)cv::getTickCount();
+        auto t0 = clk::now();
 
         imgBinarized &= ~imgSegMap;
         currentModelCopy &= imgSegMap;
 
-        auto endTime = (double)cv::getTickCount();
-        std::cout << "Remove segment loop took: " << (endTime - startTime) / cv::getTickFrequency() << " milliseconds" << std::endl;
+        auto t1 = clk::now();
+        std::cout << "removeSegmentArea took: " << duration<double, std::milli>(t1-t0).count() << " ms" << std::endl;
         return currentModelCopy;
     }
 
     void updateModel(cv::Mat imgBinarized, const cv::Mat& imgPersistentChanges) {
-        auto startTime = (double)cv::getTickCount();
+        auto t0 = clk::now();
 
         currentModel = currentModel & imgPersistentChanges;
         imgBinarized = imgBinarized & ~imgPersistentChanges;
         currentModel = currentModel | imgBinarized;
 
-        auto endTime = (double)cv::getTickCount();
-        std::cout << "Update model loop took: " << (endTime - startTime) / cv::getTickFrequency() << " milliseconds" << std::endl;
+        auto t1 = clk::now();
+        std::cout << "updateModel took: " << duration<double, std::milli>(t1-t0).count() << " ms" << std::endl;
     }
 };

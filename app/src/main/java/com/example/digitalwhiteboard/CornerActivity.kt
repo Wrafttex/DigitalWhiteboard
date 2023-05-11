@@ -127,17 +127,14 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         val bitmap = image.toBitmap()
         val newCorners: FloatArray = FloatArray(8)
         if (autoCornerBool) {
-            //val newCorners: Array<FloatArray> = Array(4){ FloatArray(2) }
-            //newCorners[0][0] = 1280f
-            //newCorners[0][1] = 960f
-            //newCorners[1][0] = 1280f
-            //newCorners[1][1] = 0f
-            //newCorners[2][0] = 0f
-            //newCorners[2][1] = 0f
-            //newCorners[3][0] = 0f
-            //newCorners[3][1] = 960f
-            cornerDetc.findCorners(bitmap, newCorners)
-            updateCorners(newCorners)
+            try {
+                cornerDetc.findCorners(bitmap, newCorners)
+                updateCorners(newCorners)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            // cornerDetc.findCorners(bitmap, newCorners)
+            // updateCorners(newCorners)
         }
 
         val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap

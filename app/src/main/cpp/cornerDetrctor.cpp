@@ -131,7 +131,7 @@ std::vector<cv::Point> cornerDetrctor::orderPoints(std::vector<cv::Point> corner
     return orderedPoints;
 }
 
-void cornerDetrctor::drawCorners(std::vector<cv::Point> cornerPoints, cv::Mat imgBgr) {
+void cornerDetrctor::drawCorners(std::vector<cv::Point> cornerPoints, cv::Mat& imgBgr) {
     for (int i = 0; i < cornerPoints.size(); i++) {
         cv::circle(imgBgr, cornerPoints[i], 10, cv::Scalar(0, 0, 255), cv::FILLED);
         cv::putText(imgBgr, std::to_string(i), cornerPoints[i], cv::FONT_HERSHEY_PLAIN, 4, cv::Scalar(0, 255, 0), 4);
