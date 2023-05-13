@@ -4,18 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
-    <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+    android:background="@color/cardview_dark_background"
+    tools:context=".CornerActivity">
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="1280px"
-        android:layout_height="960px"
+        android:layout_width="1600px"
+        android:layout_height="900px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -23,32 +18,32 @@
 
     <SurfaceView
         android:id="@+id/drawingOverlay"
-        android:layout_width="1280px"
-        android:layout_height="960px"
+        android:layout_width="1600px"
+        android:layout_height="900px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+
     <Button
-        android:id="@+id/manualCorner"
-        android:layout_width="100dp"
+        android:id="@+id/autoCorner"
+        android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="4dp"
         android:layout_marginBottom="16dp"
-        android:onClick="btnFlipOnClick"
-        android:text="Manual"
+        android:onClick="autoDetectCorners"
+        android:text="ON"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/autoCorner"
-        android:layout_width="100dp"
+        android:id="@+id/next"
+        android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="4dp"
         android:layout_marginBottom="16dp"
-        android:onClick="autoDetectCorners"
-        android:text="Auto"
+        android:text="Next"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
