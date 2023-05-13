@@ -39,7 +39,7 @@ android {
                     "-DANDROID_TOOLCHAIN=clang",
                     "-DANDROID_PLATFORM=android-29",
                     "-DANDROID_CPP_FEATURES=rtti exceptions",
-                    "-DANDROID_NDK=C:/Users/Kure/AppData/Local/Android/Sdk/ndk/25.2.9519653",
+                    "-DANDROID_NDK=C:/Users/gislu/AppData/Local/Android/Sdk/ndk/25.2.9519653", //TODO make user agnostic
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-Wl,-gc_sections,--strip-debug,-shared"
                 cFlags "-fstack-protector-all", "-fuse-ld=lld", "-fvisibility=hidden", "-ffunction-sections", "-fdata-sections", "-shared", "-Wno-error=format-security"

@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 import com.example.digitalwhiteboard.databinding.ActivityDrawBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.example.digitalwhiteboard.captureActivity
 
 class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
 
@@ -32,6 +33,7 @@ class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
     private lateinit var startButton: Button
     private var startBoolean: Boolean = false
     private lateinit var corners: FloatArray
+    private lateinit var captureAct: captureActivity
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDrawBinding.inflate(layoutInflater)
@@ -102,9 +104,11 @@ class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
 
     override fun analyze(image: ImageProxy) {
         val bitmap = image.toBitmap()
+        if (!::captureAct.isInitialized) captureAct = captureActivity(corners, bitmap)
         val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
         if (startBoolean) {
-            val manipulatedImage = bitmap.rotate(90f)
+            val manipulatedImage = bitmap.copy(bitmap.config, true)
+            captureAct.capture(bitmap, manipulatedImage)
             runOnUiThread {
                 binding.imageView.setImageBitmap(manipulatedImage)
             }

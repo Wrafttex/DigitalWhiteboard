@@ -5,23 +5,20 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(build_DIR ${CMAKE_SOURCE_DIR}/build)
 
-#set(ANDROID_NDK C:/Users/Kure/AppData/Local/Android/Sdk/ndk/25.2.9519653)
+#set(ANDROID_NDK C:/Users/gislu/AppData/Local/Android/Sdk/ndk/25.2.9519653)
 #set(CMAKE_TOOLCHAIN_FILE ${ANDROID_NDK}/build/cmake/android.toolchain.cmake)
 
 
 set(pytorch_testapp_cpp_DIR ${CMAKE_CURRENT_LIST_DIR}/src/main/cpp)
-file(GLOB SOURCES
-        ${pytorch_testapp_cpp_DIR}/cppNative.cpp
-        )
 
 add_library(${TARGET} SHARED
 
-        ${pytorch_testapp_cpp_DIR}/cppNative.cpp
         ${pytorch_testapp_cpp_DIR}/native-lib.cpp
         ${pytorch_testapp_cpp_DIR}/captureActivity.cpp
         ${pytorch_testapp_cpp_DIR}/cornerDetrctor.cpp
         ${pytorch_testapp_cpp_DIR}/opencvUtils.cpp
         ${pytorch_testapp_cpp_DIR}/CaptureService.cpp
+        ${pytorch_testapp_cpp_DIR}/segmentator.cpp
         )
 
 
@@ -45,7 +42,7 @@ find_library(FBJNI_LIBRARY fbjni
         )
 
 # OpenCV
-set(OPENCV_ANDROID_SDK D:/DigitalWhiteBoard/8_Semester/OpenCV-android-sdk)
+set(OPENCV_ANDROID_SDK "D:/temp ting/sw8 projekt/OpenCV-android-sdk") #TODO make user agnostic
 #message(WARNING "OPENCV_ANDROID_SDK: ${OPENCV_ANDROID_SDK}")
 #if(NOT DEFINED ${OPENCV_ANDROID_SDK})
 #  message(FATAL_ERROR "Environment var OPENCV_ANDROID_SDK set")
