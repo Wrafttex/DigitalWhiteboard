@@ -1,8 +1,11 @@
 package com.example.digitalwhiteboard
 
+import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.View
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 
 
@@ -11,6 +14,7 @@ class SettingActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setting)
+        this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         val dropdown: Spinner = findViewById(R.id.spinner2)
         val prefStor = PrefStorage(this)
         val moduleItems = arrayOf("1", "2", "3")
@@ -42,10 +46,21 @@ class SettingActivity : AppCompatActivity() {
                 //println("isunchecked")
             }
         }
+
+        onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val intent = Intent (this@SettingActivity, MainActivity::class.java)
+                startActivity(intent)
+            }
+        })
+
+        /*
         val btn_set_return = findViewById<Button>(R.id.btn_set_return)
         btn_set_return.setOnClickListener(){
             finish()
         }
+
+         */
 
 
     }

@@ -13,14 +13,13 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.example.digitalwhiteboard.databinding.ActivityCornerBinding
 import java.util.concurrent.ExecutorService
@@ -29,15 +28,16 @@ import java.util.concurrent.Executors
 class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouchListener {
     private lateinit var binding: ActivityCornerBinding
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var testImage: PreviewView
     private lateinit var imageView: ImageView
     private lateinit var drawingOverlay: SurfaceView
     private lateinit var overlayHolder: SurfaceHolder
     private lateinit var autoButton: Button
+    private lateinit var nextButton: Button
     private var autoCornerBool: Boolean = false
     private var cornerPaint: Paint = Paint()
     private var boxPaint: Paint = Paint()
     private var corners: Array<Corner> = Array(4) { Corner(0f, 0f) }
+    private lateinit var newCorners: FloatArray
     private var path: Path = Path()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,23 +48,32 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
         cameraExecutor = Executors.newSingleThreadExecutor()
         requestPermission()
         setPaint()
-        testImage = findViewById(R.id.viewFinder)
         autoButton = findViewById(R.id.autoCorner)
+        nextButton = findViewById(R.id.next)
+        nextButton.visibility = View.INVISIBLE
         imageView = findViewById(R.id.imageView)
         drawingOverlay = findViewById(R.id.drawingOverlay)
         drawingOverlay.setZOrderOnTop(true)
         overlayHolder = drawingOverlay.holder
         overlayHolder.setFormat(PixelFormat.TRANSPARENT)
         drawingOverlay.setOnTouchListener(this)
-        val btn_set = findViewById<Button>(R.id.next)
-        btn_set.setOnClickListener(){
+        val nextButton = findViewById<Button>(R.id.next)
+
+        nextButton.setOnClickListener {
             val intent = Intent (this@CornerActivity, DrawActivity::class.java)
             /* Use this to send data from one activity to another, it can take basically all type value  */
             intent.putExtra("key","value")
-            intent.putExtra("CornerValue", corners)
+            intent.putExtra("CornerValue", newCorners)
             startActivity(intent)
             finish()
         }
+
+        onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val intent = Intent (this@CornerActivity, MainActivity::class.java)
+                startActivity(intent)
+            }
+        })
     }
 
     private fun requestPermission() {
@@ -90,58 +99,49 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
         processCameraProvider.addListener({
             try {
                 val cameraProvider = processCameraProvider.get()
-                val previewUseCase = buildPreviewUseCase()
                 val imageAnalysisUseCase = buildImageAnalysisUseCase()
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
                     this,
                     CameraSelector.DEFAULT_BACK_CAMERA,
-                    //previewUseCase,
                     imageAnalysisUseCase
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }, ContextCompat.getMainExecutor(this)
-        )
-    }
-
-    private fun buildPreviewUseCase(): Preview {
-        return Preview.Builder()
-            .build().also { it.setSurfaceProvider(binding.viewFinder?.surfaceProvider) }
+        }, ContextCompat.getMainExecutor(this))
     }
 
     private fun buildImageAnalysisUseCase(): ImageAnalysis {
         return ImageAnalysis.Builder()
-            .setTargetResolution(Size(1280, 960))
+            .setTargetResolution(Size(1600, 900))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also { it.setAnalyzer(cameraExecutor, this) }
     }
 
     override fun analyze(image: ImageProxy) {
         if (autoCornerBool) {
-            val newCorners: Array<FloatArray> = Array(4){ FloatArray(2) }
-            newCorners[0][0] = 1280f
-            newCorners[0][1] = 960f
-            newCorners[1][0] = 1280f
-            newCorners[1][1] = 0f
-            newCorners[2][0] = 0f
-            newCorners[2][1] = 0f
-            newCorners[3][0] = 0f
-            newCorners[3][1] = 960f
+            newCorners = FloatArray(8) { 0f }
+            newCorners[0] = drawingOverlay.width.toFloat()
+            newCorners[1] = drawingOverlay.height.toFloat()
+            newCorners[2] = drawingOverlay.width.toFloat()
+            newCorners[3] = 0f
+            newCorners[4] = 0f
+            newCorners[5] = 0f
+            newCorners[6] = 0f
+            newCorners[7] = drawingOverlay.height.toFloat()
             updateCorners(newCorners)
         }
         val bitmap = image.toBitmap()
-        val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
-        val finalImage = rotatedImage.copy(rotatedImage.config, true)
-        myFlip(rotatedImage, finalImage)
+        val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap // Makes image turn correctly in relation to portrait/landscape
+        val finalImage = rotatedImage.copy(rotatedImage.config, true) // rotatedImage is enough if the function call does not require two copies of the same bitmap
         runOnUiThread {
-            binding.imageView?.setImageBitmap(finalImage)
+            binding.imageView.setImageBitmap(finalImage)
         }
         image.close()
     }
 
-    fun Bitmap.rotate(degrees: Float): Bitmap {
+    private fun Bitmap.rotate(degrees: Float): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees) }
         return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
@@ -154,23 +154,10 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
         boxPaint.strokeWidth = 10f
     }
 
-    private fun setCorners() {
-        val widthMargin = drawingOverlay.width / 4f
-        val heightMargin = drawingOverlay.height / 4f
-        corners[0].x = widthMargin
-        corners[0].y = heightMargin
-        corners[1].x = widthMargin
-        corners[1].y = (drawingOverlay.height - heightMargin)
-        corners[2].x = (drawingOverlay.width - widthMargin)
-        corners[2].y = (drawingOverlay.height - heightMargin)
-        corners[3].x = (drawingOverlay.width - widthMargin)
-        corners[3].y = heightMargin
-    }
-
-    private fun updateCorners(newCorners: Array<FloatArray>) {
+    private fun updateCorners(newCorners: FloatArray) {
         for (i in 0..3) {
-            corners[i].x = if (newCorners[i][0] > drawingOverlay.width) drawingOverlay.width.toFloat() else if (newCorners[i][0] < 0f) 0f else newCorners[i][0]
-            corners[i].y = if (newCorners[i][1] > drawingOverlay.height) drawingOverlay.height.toFloat() else if (newCorners[i][1] < 0f) 0f else newCorners[i][1]
+            corners[i].x = if (newCorners[i*2] > drawingOverlay.width) drawingOverlay.width.toFloat() else if (newCorners[i*2] < 0f) 0f else newCorners[i*2]
+            corners[i].y = if (newCorners[(i*2)+1] > drawingOverlay.height) drawingOverlay.height.toFloat() else if (newCorners[(i*2)+1] < 0f) 0f else newCorners[(i*2)+1]
         }
         drawBoxAndCorners()
     }
@@ -199,7 +186,6 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
     }
 
     private fun drawBoxAndCorners() {
-        // var canvas = Canvas(drawing)
         val canvas = overlayHolder.lockCanvas()
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
         path.reset()
@@ -209,33 +195,24 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
             path.lineTo(corner.x, corner.y)
         }
         canvas.drawPath(path, boxPaint)
-        // canvas = overlayHolder.lockCanvas(null)
-        // canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-        // canvas.drawBitmap(drawing, 0f, 0f, null)
         overlayHolder.unlockCanvasAndPost(canvas)
-    }
-
-    fun btnFlipOnClick(view: View) {
-        setCorners()
-        drawBoxAndCorners()
     }
 
     fun autoDetectCorners(view: View) {
         if (!autoCornerBool) {
             autoCornerBool = true
-            autoButton.text = "ON"
+            autoButton.text = getString(R.string.OFF)
         } else {
             autoCornerBool = false
-            autoButton.text = "OFF"
+            autoButton.text = getString(R.string.ON)
         }
+        nextButton.visibility = View.VISIBLE
     }
-
-    external fun myFlip(bitmap: Bitmap, bitmapOut: Bitmap)
 
     companion object {
         // Used to load the 'digitalwhiteboard' library on application startup.
         init {
-            System.loadLibrary("native-lib")
+            System.loadLibrary("digitalwhiteboard")
         }
     }
 

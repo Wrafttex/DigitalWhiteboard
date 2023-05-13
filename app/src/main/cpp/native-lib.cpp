@@ -169,6 +169,7 @@ extern "C" {
     }
 }
 
+/*
 JNIEXPORT auto JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) -> jint {
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
@@ -191,6 +192,7 @@ JNIEXPORT auto JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) -> jint {
 
     return JNI_VERSION_1_6;
 }
+*/
 
 /*
 https://stackoverflow.com/questions/51613950/kotlin-ndk-and-c-interactions
