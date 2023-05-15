@@ -55,6 +55,9 @@ void matToBitmap(JNIEnv* env, Mat src, jobject bitmap, jboolean needPremultiplyA
         CV_Assert(AndroidBitmap_getInfo(env, bitmap, &info) >= 0);
         CV_Assert(info.format == ANDROID_BITMAP_FORMAT_RGBA_8888 ||
                   info.format == ANDROID_BITMAP_FORMAT_RGB_565);
+        std::ostringstream oss;
+        oss << "height: " << info.height << " rows: " << (uint32_t)src.rows << " width: " << info.width << "cols: " << (uint32_t)src.cols << " dims: " << src.dims;
+        __android_log_print(ANDROID_LOG_DEBUG, "native-lib", "%s ", oss.str().c_str());
         CV_Assert(src.dims == 2 && info.height == (uint32_t)src.rows && info.width == (uint32_t)src.cols);
         CV_Assert(src.type() == CV_8UC1 || src.type() == CV_8UC3 || src.type() == CV_8UC4);
         CV_Assert(AndroidBitmap_lockPixels(env, bitmap, &pixels) >= 0);
@@ -106,14 +109,31 @@ void vectorToJFloatArray(JNIEnv* env, std::vector<cv::Point>& points, jfloatArra
     env->ReleaseFloatArrayElements(fArrOut, data, 0);
 }
 
-std::vector<cv::Point>&& JFloatArrayToVector(JNIEnv* env, jfloatArray fArrIn) {
+std::vector<cv::Point> JFloatArrayToVector(JNIEnv* env, jfloatArray fArrIn) {
     std::vector<cv::Point> points;
     jfloat* data = env->GetFloatArrayElements(fArrIn, nullptr);
     for (int i = 0; i < env->GetArrayLength(fArrIn); i += 2) {
         points.emplace_back(data[i], data[i + 1]);
     }
     env->ReleaseFloatArrayElements(fArrIn, data, 0);
-    return std::move(points);
+    return points;
+}
+
+cv::Size getPerspectiveSize(std::vector<cv::Point>& cornerPoints) { //TODO: sum ting wong
+    // Approx target corners.
+    cv::Point tl = cornerPoints[0];
+    cv::Point tr = cornerPoints[1];
+    cv::Point br = cornerPoints[2];
+    cv::Point bl = cornerPoints[3];
+
+    auto widthBtm = cv::norm(bl - br);
+    auto widthTop = cv::norm(tl - tr);
+    auto maxWidth = fmax(widthBtm, widthTop);
+
+    auto heightRight = cv::norm(br - tr);
+    auto heightLeft = cv::norm(bl - tl);
+    auto maxHeight = fmax(heightRight, heightLeft);
+    return {static_cast<int>(maxWidth), static_cast<int>(maxHeight)};
 }
 
 extern "C" {
@@ -138,11 +158,23 @@ extern "C" {
         matToBitmap(env, src, bitmapOut, false);
     }
 
-    JNIEXPORT jlong JNICALL Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity(JNIEnv * env, jobject obj, jfloatArray cornersPtr, jobject imgBgrPtr){
+    JNIEXPORT jlong JNICALL Java_com_example_digitalwhiteboard_captureActivity_createNativeCaptureActivity(JNIEnv * env, jobject obj, jfloatArray corners, jobject bitmapIn){
         Mat dst;
-        bitmapToMat(env, imgBgrPtr, dst, false);
-        std::vector<cv::Point> corners = JFloatArrayToVector(env, cornersPtr);
-        return reinterpret_cast<jlong>(new captureActivity(corners, dst));
+        bitmapToMat(env, bitmapIn, dst, false);
+
+        std::vector<cv::Point> points = JFloatArrayToVector(env, corners);
+
+        return reinterpret_cast<jlong>(new captureActivity(std::move(points), getPerspectiveSize(points)));
+    }
+
+    JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_captureActivity_getSize(JNIEnv * env, jobject obj, jfloatArray corners, jintArray iArrOut){
+
+        std::vector<cv::Point_<int>> points = JFloatArrayToVector(env, corners);
+        auto size = getPerspectiveSize((points));
+        jint* data =  env->GetIntArrayElements(iArrOut, nullptr);
+        data[0] = size.width;
+        data[1] = size.height;
+        env->ReleaseIntArrayElements(iArrOut, data, 0);
     }
 
     JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_captureActivity_destroyNativeCaptureActivity(JNIEnv * env, jobject obj, jlong ptr) {
@@ -151,8 +183,12 @@ extern "C" {
 
     JNIEXPORT void JNICALL Java_com_example_digitalwhiteboard_captureActivity_capture(JNIEnv * env, jobject obj, jlong ptr, jobject bitmapIn, jobject bitmapOut){
         Mat dst;
-        bitmapToMat(env, bitmapIn, dst, false);
-        cv::Mat imgCaptured = reinterpret_cast<captureActivity*>(ptr)->capture(dst);
+        bitmapToMat(env, bitmapIn, dst, true);
+//        auto tensor_image = CVMatToTensor(dst.clone());
+        cv::Mat imgCaptured = reinterpret_cast<captureActivity*>(ptr)->capture(std::move(dst));
+        std::ostringstream oss;
+        oss << "nChannels: " << imgCaptured.channels() << " size: " << imgCaptured.size() << " dims: " << imgCaptured.dims;
+        __android_log_print(ANDROID_LOG_DEBUG, "native-lib", "%s ", oss.str().c_str());
         matToBitmap(env, imgCaptured, bitmapOut, false);
     }
 

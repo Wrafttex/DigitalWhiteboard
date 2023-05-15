@@ -3,16 +3,16 @@
 #include <torch/script.h> // https://github.com/pytorch/pytorch/issues/30158
 #include <opencv2/opencv.hpp>
 #include <memory>
+#include <jni.h>
 
 class segmentator {
 public:
     segmentator();
-    void loadModel(std::string path);
+    segmentator(const std::string& path);
     cv::Mat segmentate(cv::Mat& input);
 private:
     torch::jit::script::Module module;
-    cv::Mat TensorToCVMat(torch::Tensor tensor);
-    cv::Mat TensorToCVMat8UC3(torch::Tensor tensor);
-    torch::Tensor CVMatToTensor(cv::Mat mat);
+    static cv::Mat TensorToCVMat(torch::Tensor tensor);
+    static torch::Tensor CVMatToTensor(cv::Mat mat);
     
 };

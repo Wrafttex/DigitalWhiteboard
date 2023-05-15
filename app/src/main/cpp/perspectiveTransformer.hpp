@@ -32,9 +32,9 @@ public:
         float maxHeight = fmax(heightRight, heightLeft);
 
         // Ensure no extreme dimensions.
-        if (hasExtremeDimensions(maxWidth, maxHeight)){
-            return {};
-        }
+//        if (hasExtremeDimensions(maxWidth, maxHeight)){
+//            return {};
+//        }
 
         // Create rectangle from approximated corners.
         cv::Mat targetCorners = (cv::Mat_<float>(4, 2) << 0, 0, maxWidth - 1, 0, maxWidth - 1, maxHeight - 1, 0, maxHeight - 1);

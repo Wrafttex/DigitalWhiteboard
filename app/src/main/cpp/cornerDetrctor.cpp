@@ -1,4 +1,9 @@
 #include "cornerDetrctor.hpp"
+#include <chrono>
+#include <android/log.h>
+
+using std::chrono::duration;
+using clk = std::chrono::high_resolution_clock;
 
 void cornerDetrctor::cornerRunningAVG(std::vector<cv::Point> cornerPoints) {
     if (corners.empty()) corners = cornerPoints;
@@ -11,10 +16,13 @@ void cornerDetrctor::cornerRunningAVG(std::vector<cv::Point> cornerPoints) {
 }
 
 std::vector<cv::Point> cornerDetrctor::findCorners(cv::Mat&& imgBgr) {
+    auto t0 = clk::now();
     cv::Mat imgEdges = makeEdgeImage(imgBgr);
     std::vector<cv::Point> cornerPoints = getCorners(imgEdges);
     if (cornerPoints.size() == 4) cornerPoints = orderPoints(cornerPoints);
     this->cornerRunningAVG(cornerPoints);
+    auto t1 = clk::now();
+   __android_log_print(ANDROID_LOG_DEBUG, "findCorners", "%s ms", std::to_string(duration<double, std::milli>(t1-t0).count()).c_str());
 
     return this->corners;
 }

@@ -1,5 +1,6 @@
 package com.example.digitalwhiteboard
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -20,10 +21,14 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import com.example.digitalwhiteboard.databinding.ActivityDrawBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import com.example.digitalwhiteboard.captureActivity
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
 
@@ -56,6 +61,29 @@ class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
                 startActivity(intent)
             }
         })
+    }
+
+    private fun assetFilePath(context: Context, assetName: String): String? {
+        val file = File(context.filesDir, assetName)
+        if (file.exists() && file.length() > 0) {
+            return file.absolutePath
+        }
+        try {
+            context.assets.open(assetName).use { `is` ->
+                FileOutputStream(file).use { os ->
+                    val buffer = ByteArray(4 * 1024)
+                    var read: Int
+                    while (`is`.read(buffer).also { read = it } != -1) {
+                        os.write(buffer, 0, read)
+                    }
+                    os.flush()
+                }
+                return file.absolutePath
+            }
+        } catch (e: IOException) {
+            Log.e("captureActivity", "Error process asset $assetName to file path")
+        }
+        return null
     }
 
     private fun requestPermission() {
@@ -104,15 +132,21 @@ class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
 
     override fun analyze(image: ImageProxy) {
         val bitmap = image.toBitmap()
-        if (!::captureAct.isInitialized) captureAct = captureActivity(corners, bitmap)
-        val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
-        if (startBoolean) {
+        if (!::captureAct.isInitialized) {
             val manipulatedImage = bitmap.copy(bitmap.config, true)
-            captureAct.capture(bitmap, manipulatedImage)
+            var path = assetFilePath(this, "CPU_model_best.pt")!!
+            captureAct = captureActivity(corners, manipulatedImage)
+        }
+        if (startBoolean) {
+            val bitmapCopy = bitmap.copy(bitmap.config, true)
+//            val manipulatedImage = bitmap.copy(bitmap.config, true)
+            val manipulatedImage = createBitmap(captureAct.width, captureAct.height)
+            captureAct.capture(bitmapCopy, manipulatedImage)
             runOnUiThread {
                 binding.imageView.setImageBitmap(manipulatedImage)
             }
         } else {
+            val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
             runOnUiThread {
                 binding.imageView.setImageBitmap(rotatedImage)
             }
