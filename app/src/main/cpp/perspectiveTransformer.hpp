@@ -16,7 +16,7 @@ public:
         return (maxWidth < MIN_DIMENSION || maxHeight < MIN_DIMENSION || maxWidth > MAX_DIMENSION || maxHeight > MAX_DIMENSION);
     }
     
-    cv::Mat getPerspective(cv::Mat& imgRgb, std::vector<cv::Point>& cornerPoints){
+    cv::Mat getPerspective(cv::Mat&& imgRgb, std::vector<cv::Point>& cornerPoints){
         // Approx target corners.
         cv::Point tl = cornerPoints[0];
         cv::Point tr = cornerPoints[1];

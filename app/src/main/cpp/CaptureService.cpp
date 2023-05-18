@@ -35,7 +35,7 @@ public:
         auto t0 = clk::now();
         cv::Mat matPerspectiveRgb;
         cv::cvtColor(imgBgr, matPerspectiveRgb, cv::COLOR_RGBA2RGB);
-        cv::Mat imgSegMap = Segmentator.segmentate(matPerspectiveRgb);
+        cv::Mat imgSegMap = Segmentator.segmentate(std::move(matPerspectiveRgb));
 //        cv::Mat imgSegMap;
 //        cv::cvtColor(matPerspectiveRgb, imgSegMap, cv::COLOR_BGR2GRAY);
         auto t1 = clk::now();

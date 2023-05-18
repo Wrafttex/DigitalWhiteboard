@@ -15,11 +15,11 @@ segmentator::segmentator(const std::string& path){
     module.eval();
 }
 
-cv::Mat segmentator::segmentate(cv::Mat& input) {
+cv::Mat segmentator::segmentate(cv::Mat&& input) {
     // Create a vector of inputs.
     std::vector<torch::jit::IValue> inputs;
-    auto tensor_image = CVMatToTensor(input.clone());
-    inputs.emplace_back(tensor_image);
+    auto tensor_image = CVMatToTensor(std::move(input));
+    inputs.emplace_back(std::move(tensor_image));
 
     // Execute the model and turn its output into a tensor.
     auto t0 = clk::now();
@@ -40,10 +40,10 @@ cv::Mat segmentator::segmentate(cv::Mat& input) {
     return outputMat.clone();
 }
 
-torch::Tensor segmentator::CVMatToTensor(cv::Mat mat) { // TODO: maby normalize?
-    cv::Mat matFloat;
+torch::Tensor segmentator::CVMatToTensor(cv::Mat&& matFloat) { // TODO: maby normalize?
+//    cv::Mat matFloat;
 //    cv::cvtColor(mat, mat, cv::COLOR_RGBA2RGB);
-    mat.convertTo(matFloat, CV_32F);
+    matFloat.convertTo(matFloat, CV_32F);
     auto size = matFloat.size();
     auto nChannels = matFloat.channels();
 //    auto sizes = at::IntArrayRef({1, size.height, size.width, nChannels});

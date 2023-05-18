@@ -64,6 +64,10 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
         nextButton.setOnClickListener {
             val intent = Intent (this@CornerActivity, DrawActivity::class.java)
             /* Use this to send data from one activity to another, it can take basically all type value  */
+            for (i in 0..3) {
+                newCorners[i*2] = corners[i].x
+                newCorners[(i*2)+1] = corners[i].y
+            }
             intent.putExtra("key","value")
             intent.putExtra("CornerValue", newCorners)
             startActivity(intent)
