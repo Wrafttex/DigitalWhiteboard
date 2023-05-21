@@ -9,8 +9,8 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="1600px"
-        android:layout_height="900px"
+        android:layout_width="1280px"
+        android:layout_height="720px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -18,8 +18,8 @@
 
     <SurfaceView
         android:id="@+id/drawingOverlay"
-        android:layout_width="1600px"
-        android:layout_height="900px"
+        android:layout_width="1280px"
+        android:layout_height="720px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"

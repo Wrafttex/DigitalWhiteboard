@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
@@ -39,20 +40,35 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
     private var corners: Array<Corner> = Array(4) { Corner(0f, 0f) }
     private lateinit var newCorners: FloatArray
     private var path: Path = Path()
+    private lateinit var resolution: Size
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCornerBinding.inflate(layoutInflater)
         setContentView(binding.root)
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        imageView = findViewById(R.id.imageView)
+        drawingOverlay = findViewById(R.id.drawingOverlay)
+        val prefStorage = PrefStorage(this)
+        val preferredResolution = prefStorage.storageRead("module","")
+        if (preferredResolution.isNullOrEmpty()) {
+            resolution = Size(1280, 720)
+        } else {
+            val splitString = preferredResolution?.split("x")
+            resolution = Size(splitString!![0].toInt(), splitString[1].toInt())
+        }
+        imageView.layoutParams.width = resolution.width
+        imageView.layoutParams.height = resolution.height
+        drawingOverlay.layoutParams.width = resolution.width
+        drawingOverlay.layoutParams.height = resolution.height
         cameraExecutor = Executors.newSingleThreadExecutor()
         requestPermission()
         setPaint()
         autoButton = findViewById(R.id.autoCorner)
         nextButton = findViewById(R.id.next)
         nextButton.visibility = View.INVISIBLE
-        imageView = findViewById(R.id.imageView)
-        drawingOverlay = findViewById(R.id.drawingOverlay)
         drawingOverlay.setZOrderOnTop(true)
         overlayHolder = drawingOverlay.holder
         overlayHolder.setFormat(PixelFormat.TRANSPARENT)
@@ -61,7 +77,10 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
 
         nextButton.setOnClickListener {
             val intent = Intent (this@CornerActivity, DrawActivity::class.java)
-            /* Use this to send data from one activity to another, it can take basically all type value  */
+            for (i in 0..3) {
+                newCorners[i*2] = corners[i].x
+                newCorners[(i*2)+1] = corners[i].y
+            }
             intent.putExtra("key","value")
             intent.putExtra("CornerValue", newCorners)
             startActivity(intent)
@@ -114,7 +133,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
 
     private fun buildImageAnalysisUseCase(): ImageAnalysis {
         return ImageAnalysis.Builder()
-            .setTargetResolution(Size(1600, 900))
+            .setTargetResolution(resolution)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also { it.setAnalyzer(cameraExecutor, this) }
     }
