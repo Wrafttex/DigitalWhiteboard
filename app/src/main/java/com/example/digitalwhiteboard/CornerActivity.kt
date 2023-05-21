@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import com.example.digitalwhiteboard.databinding.ActivityCornerBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.example.digitalwhiteboard.cornerDetrctor
 
 class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouchListener {
     private lateinit var binding: ActivityCornerBinding
@@ -41,6 +42,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
     private lateinit var newCorners: FloatArray
     private var path: Path = Path()
     private lateinit var resolution: Size
+    private var cornerDetrctor = cornerDetrctor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +79,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
 
         nextButton.setOnClickListener {
             val intent = Intent (this@CornerActivity, DrawActivity::class.java)
+            /* Use this to send data from one activity to another, it can take basically all type value  */
             for (i in 0..3) {
                 newCorners[i*2] = corners[i].x
                 newCorners[(i*2)+1] = corners[i].y
@@ -139,23 +142,16 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
     }
 
     override fun analyze(image: ImageProxy) {
+        val bitmap = image.toBitmap()
         if (autoCornerBool) {
             newCorners = FloatArray(8) { 0f }
-            newCorners[0] = drawingOverlay.width.toFloat()
-            newCorners[1] = drawingOverlay.height.toFloat()
-            newCorners[2] = drawingOverlay.width.toFloat()
-            newCorners[3] = 0f
-            newCorners[4] = 0f
-            newCorners[5] = 0f
-            newCorners[6] = 0f
-            newCorners[7] = drawingOverlay.height.toFloat()
+            cornerDetrctor.findCorners(bitmap, newCorners)
             updateCorners(newCorners)
         }
-        val bitmap = image.toBitmap()
         val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap // Makes image turn correctly in relation to portrait/landscape
-        val finalImage = rotatedImage.copy(rotatedImage.config, true) // rotatedImage is enough if the function call does not require two copies of the same bitmap
+//        val finalImage = rotatedImage.copy(rotatedImage.config, true) // rotatedImage is enough if the function call does not require two copies of the same bitmap
         runOnUiThread {
-            binding.imageView.setImageBitmap(finalImage)
+            binding.imageView.setImageBitmap(rotatedImage)
         }
         image.close()
     }
