@@ -10,11 +10,10 @@
 
 class captureActivity {
 private:
-    CaptureService captureService;// = CaptureService(cv::Size_<int>(), "");
+    std::vector<cv::Point> corners;
+    CaptureService captureService = CaptureService(cv::Size_<int>());
     perspectiveTransformer PerspectiveTransformer{};
 public:
-    std::vector<cv::Point> corners;
-    captureActivity(std::vector<cv::Point>&& corners, cv::Size imgBgr);
-    captureActivity(std::vector<cv::Point>&& corners, cv::Size&& imgBgr, const std::string& path);
-    cv::Mat capture(cv::Mat&& imgBgr);
+    captureActivity(std::vector<cv::Point> corners, cv::Mat imgBgr);
+    cv::Mat capture(cv::Mat& imgBgr);
 };
