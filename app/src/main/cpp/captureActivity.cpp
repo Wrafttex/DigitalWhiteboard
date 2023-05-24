@@ -1,24 +1,29 @@
 #include "captureActivity.hpp"
-#include "jni.h"
+#include <chrono>
+#include <utility>
+#include <android/log.h>
 
-captureActivity::captureActivity(std::vector<cv::Point> corners, cv::Mat imgBgr) : corners(corners) {
-    cv::Mat imgPerspective = PerspectiveTransformer.getPerspective(imgBgr, corners);
-    if (!imgPerspective.empty()) {
-        captureService = CaptureService(imgPerspective.size());
-    } else {
-        throw std::invalid_argument("Invalid corners");
-    }
-}
+using std::chrono::duration;
+using clk = std::chrono::high_resolution_clock;
 
-auto captureActivity::capture(cv::Mat& imgBgr) -> cv::Mat {
+captureActivity::captureActivity(std::vector<cv::Point>&& corners, cv::Size imgSize) : corners(corners), captureService(imgSize) {}
+
+captureActivity::captureActivity(std::vector<cv::Point>&& corners, cv::Size&& imgSize, const std::string& path):
+    corners(std::move(corners)), captureService(CaptureService(imgSize, path)) {}
+
+auto captureActivity::capture(cv::Mat&& imgBgr) -> cv::Mat {
     // Perspective transform
-    cv::Mat imgPerspective = PerspectiveTransformer.getPerspective(imgBgr, corners);
+    auto t0 = clk::now();
+    cv::Mat imgPerspective = PerspectiveTransformer.getPerspective(std::move(imgBgr), corners);
+    auto t1 = clk::now();
+    __android_log_print(ANDROID_LOG_DEBUG, "PerspectiveTransformer", "%s ms", std::to_string(duration<double, std::milli>(t1-t0).count()).c_str());
+//    std::cout << "PerspectiveTransformer loop took: " << duration<double, std::milli>(t1-t0).count() << " ms" << std::endl;
 
     if (!imgPerspective.empty()) {
         // Capture
         return captureService.capture(imgPerspective);
     }
-    return {};
+    return imgPerspective;
 
 }
 

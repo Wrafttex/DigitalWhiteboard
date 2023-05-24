@@ -1,4 +1,9 @@
 #include "cornerDetrctor.hpp"
+#include <chrono>
+#include <android/log.h>
+
+using std::chrono::duration;
+using clk = std::chrono::high_resolution_clock;
 
 void cornerDetrctor::cornerRunningAVG(std::vector<cv::Point> cornerPoints) {
     if (corners.empty()) corners = cornerPoints;
@@ -11,10 +16,13 @@ void cornerDetrctor::cornerRunningAVG(std::vector<cv::Point> cornerPoints) {
 }
 
 std::vector<cv::Point> cornerDetrctor::findCorners(cv::Mat&& imgBgr) {
+    auto t0 = clk::now();
     cv::Mat imgEdges = makeEdgeImage(imgBgr);
     std::vector<cv::Point> cornerPoints = getCorners(imgEdges);
     if (cornerPoints.size() == 4) cornerPoints = orderPoints(cornerPoints);
     this->cornerRunningAVG(cornerPoints);
+    auto t1 = clk::now();
+   __android_log_print(ANDROID_LOG_DEBUG, "findCorners", "%s ms", std::to_string(duration<double, std::milli>(t1-t0).count()).c_str());
 
     return this->corners;
 }
@@ -40,7 +48,7 @@ std::vector<cv::Point> cornerDetrctor::getCorners(const cv::Mat& imgEdges) {
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(imgEdges, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    if (contours.empty()) return {};
+    if (contours.empty()) throw std::runtime_error("No contours found");
 
     std::vector<cv::Point> shapePoints = findLargestShapePoints(contours);
     std::vector<cv::Point> cornerPoints = approxCornerPoints(shapePoints, imgEdges);
@@ -131,7 +139,7 @@ std::vector<cv::Point> cornerDetrctor::orderPoints(std::vector<cv::Point> corner
     return orderedPoints;
 }
 
-void cornerDetrctor::drawCorners(std::vector<cv::Point> cornerPoints, cv::Mat imgBgr) {
+void cornerDetrctor::drawCorners(std::vector<cv::Point> cornerPoints, cv::Mat& imgBgr) {
     for (int i = 0; i < cornerPoints.size(); i++) {
         cv::circle(imgBgr, cornerPoints[i], 10, cv::Scalar(0, 0, 255), cv::FILLED);
         cv::putText(imgBgr, std::to_string(i), cornerPoints[i], cv::FONT_HERSHEY_PLAIN, 4, cv::Scalar(0, 255, 0), 4);
