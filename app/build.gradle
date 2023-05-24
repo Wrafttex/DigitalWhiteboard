@@ -27,8 +27,7 @@ android {
         versionName "1.0"
 
         ndk {
-            abiFilters 'armeabi-v7a', 'x86', 'x86_64'
-            //abiFilters 'arm64-v8a'
+            abiFilters 'arm64-v8a', 'x86', 'x86_64'
         }
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -37,13 +36,11 @@ android {
                 arguments "-DANDROID_STL=c++_shared" ,
                     "-DANDROID_ARM_NEON=ON",
                     "-DANDROID_TOOLCHAIN=clang",
-                    "-DANDROID_PLATFORM=android-29",
                     "-DANDROID_CPP_FEATURES=rtti exceptions",
-                    "-DANDROID_NDK=C:/Users/gislu/AppData/Local/Android/Sdk/ndk/25.2.9519653", //TODO make user agnostic
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-Wl,-gc_sections,--strip-debug,-shared"
-                cFlags "-fstack-protector-all", "-fuse-ld=lld", "-fvisibility=hidden", "-ffunction-sections", "-fdata-sections", "-shared", "-Wno-error=format-security"
-                cppFlags "-std=c++17", "-fuse-ld=lld", "-fstack-protector-all", "-fvisibility=hidden", "-ffunction-sections", "-shared", "-frtti", "-fexceptions"
+                cFlags "-fstack-protector-all -fvisibility=hidden -ffunction-sections -fdata-sections -shared -Wno-error=format-security -O3"
+                cppFlags "-std=c++17 -fstack-protector-all -fvisibility=hidden -ffunction-sections -frtti -fexceptions -O3"
                 version '3.22.1'
             }
         }
@@ -64,7 +61,6 @@ android {
     }
     externalNativeBuild {
         cmake {
-            //path file('src/main/cpp/CMakeLists.txt')
             path "./CMakeLists.txt"
             version '3.22.1'
         }
@@ -77,12 +73,6 @@ android {
     ndkVersion '25.2.9519653'
     buildFeatures {
         viewBinding true
-    }
-    packagingOptions {
-        //exclude 'lib/armeabi-v7a/libnative-lib.so'
-        //exclude 'lib/x86_64/libnative-lib.so'
-        //exclude 'lib/x86/libnative-lib.so'
-        //exclude 'lib/arm64-v8a/libnative-lib.so'
     }
 }
 
@@ -104,10 +94,10 @@ dependencies {
     implementation "androidx.camera:camera-extensions:${camerax_version}"
 
     //PyTorch
-    def pyTorchVersion = "1.13.1"
-    implementation "org.pytorch:pytorch_android:${pyTorchVersion}"
-    implementation "org.pytorch:pytorch_android_torchvision:${pyTorchVersion}"
-    extractForNativeBuild "org.pytorch:pytorch_android:${pyTorchVersion}"
+    implementation files("libs/pytorch_android-release.aar")
+    implementation files("libs/pytorch_android_torchvision-release.aar")
+    extractForNativeBuild files("libs/pytorch_android-release.aar")
+
 }
 
 task extractAARForNativeBuild {

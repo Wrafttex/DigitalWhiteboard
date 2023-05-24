@@ -150,7 +150,7 @@ class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         val bitmap = image.toBitmap()
         if (!::captureAct.isInitialized) {
             val manipulatedImage = bitmap.copy(bitmap.config, true)
-            var path = assetFilePath(this, "CPU_model_best.pt")!! //NOTE: needs to exist, otherwise model wont load
+            var path = assetFilePath(this, "noQ_ADE20K_ViT_Seg_T_Mask_fbgemm_CPU.pt")!! //NOTE: needs to exist, otherwise model wont load
             captureAct = captureActivity(corners, manipulatedImage)
         }
         if (startBoolean) {

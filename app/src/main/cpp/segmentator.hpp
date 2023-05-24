@@ -9,10 +9,10 @@ class segmentator {
 public:
     segmentator();
     segmentator(const std::string& path);
-    cv::Mat segmentate(cv::Mat&& input);
+    cv::Mat segmentate(cv::Mat& input);
 private:
     torch::jit::script::Module module;
-    static cv::Mat TensorToCVMat(torch::Tensor tensor);
-    static torch::Tensor CVMatToTensor(cv::Mat&& mat);
-    
+    static cv::Mat TensorToCVMat(torch::Tensor& tensor);
+    static torch::Tensor CVMatToTensor(cv::Mat& mat);
+    void postProcessing(torch::Tensor& result);
 };
