@@ -1,8 +1,6 @@
 package com.example.digitalwhiteboard
 
-import android.content.Context
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -10,96 +8,66 @@ import android.os.Bundle
 import android.util.Log
 import android.util.Size
 import android.view.View
-import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.SeekBar
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.createBitmap
 import com.example.digitalwhiteboard.databinding.ActivityDrawBinding
+import java.lang.Float.max
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import com.example.digitalwhiteboard.captureActivity
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 
-
-class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
+class DrawActivity : AppCompatActivity(), SeekBar.OnSeekBarChangeListener, ImageAnalysis.Analyzer {
 
     private lateinit var binding: ActivityDrawBinding
     private lateinit var cameraExecutor: ExecutorService
+    var srcBitmap: Bitmap? = null
+    var dstBitmap: Bitmap? = null
+    private lateinit var testImage: PreviewView
     private lateinit var imageView: ImageView
+    private lateinit var sldSigma: SeekBar
     private lateinit var startButton: Button
     private var startBoolean: Boolean = false
-    private lateinit var corners: FloatArray
-    private lateinit var resolution: Size
-    private lateinit var captureAct: captureActivity
-
+    private lateinit var corners: Array<Corner>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDrawBinding.inflate(layoutInflater)
         val intent = intent
-        corners = intent.getSerializableExtra("CornerValue") as FloatArray // TODO: getSerializableExtra is a deprecated method
+
+        /*use this to get data from another activity, tho get depends on type value*/
+        corners = intent.getSerializableExtra("CornerValue") as Array<Corner> // TODO: getSerializableExtra is a deprecated method
         setContentView(binding.root)
-        this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        imageView = findViewById(R.id.imageView)
-        val prefStorage = PrefStorage(this)
-        val preferredResolution = prefStorage.storageRead("module","")
-        if (preferredResolution.isNullOrEmpty()) {
-            resolution = Size(1280, 720)
-        } else {
-            val splitString = preferredResolution?.split("x")
-            resolution = Size(splitString!![0].toInt(), splitString[1].toInt())
-        }
-        imageView.layoutParams.width = resolution.width
-        imageView.layoutParams.height = resolution.height
         cameraExecutor = Executors.newSingleThreadExecutor()
         requestPermission()
-        startButton = findViewById(R.id.start)
+        testImage = findViewById(R.id.viewFinder)
+        startButton = findViewById(R.id.btnFlip)
+        sldSigma = findViewById(R.id.sldSigma)
+        imageView = findViewById(R.id.imageView)
+        sldSigma.setOnSeekBarChangeListener(this)
 
-        startButton.setOnClickListener {
-            startOnClick(imageView)
+        val btn_set = findViewById<Button>(R.id.SettingsButton)
+        btn_set.setOnClickListener(){
+            val intent = Intent (this, SettingActivity::class.java)
+            startActivity(intent)
+        }
+        startButton.setOnClickListener(){
+            btnFlipOnClick(imageView)
         }
 
-        onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val intent = Intent (this@DrawActivity, CornerActivity::class.java)
-                startActivity(intent)
-            }
-        })
-    }
 
-    private fun assetFilePath(context: Context, assetName: String): String? {
-        val file = File(context.filesDir, assetName)
-        if (file.exists() && file.length() > 0) {
-            return file.absolutePath
-        }
-        try {
-            context.assets.open(assetName).use { `is` ->
-                FileOutputStream(file).use { os ->
-                    val buffer = ByteArray(4 * 1024)
-                    var read: Int
-                    while (`is`.read(buffer).also { read = it } != -1) {
-                        os.write(buffer, 0, read)
-                    }
-                    os.flush()
-                }
-                return file.absolutePath
-            }
-        } catch (e: IOException) {
-            Log.e("captureActivity", "Error process asset $assetName to file path")
-        }
-        return null
+        //if (testImage.previewStreamState.value == PreviewView.StreamState.STREAMING) {
+        //    srcBitmap = testImage.bitmap
+        //    imageView.setImageBitmap(srcBitmap)
+        //}
     }
 
     private fun requestPermission() {
@@ -125,76 +93,130 @@ class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         processCameraProvider.addListener({
             try {
                 val cameraProvider = processCameraProvider.get()
+                val previewUseCase = buildPreviewUseCase()
                 val imageAnalysisUseCase = buildImageAnalysisUseCase()
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
                     this,
                     CameraSelector.DEFAULT_BACK_CAMERA,
+                    previewUseCase,
                     imageAnalysisUseCase
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }, ContextCompat.getMainExecutor(this))
+        }, ContextCompat.getMainExecutor(this)
+        )
+    }
+    private fun buildPreviewUseCase(): Preview {
+        return Preview.Builder()
+            .build().also { it.setSurfaceProvider(binding.viewFinder?.surfaceProvider) }
     }
 
     private fun buildImageAnalysisUseCase(): ImageAnalysis {
         Log.v("buildImageAnalysisUseCase","inside buildImageAnalysisUseCase")
         return ImageAnalysis.Builder()
-            .setTargetResolution(resolution)
+            .setTargetResolution(Size(imageView.measuredWidth, imageView.measuredHeight))
+            //.setTargetResolution(Size(1280, 720))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also { it.setAnalyzer(cameraExecutor, this) }
     }
 
+    /*
+    private fun buildImageAnalysisUseCase(): ImageAnalysis {
+        return ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build().also {
+                it.setAnalyzer(cameraExecutor) { image ->
+                    val bitmap = image.toBitmap()
+                    val rotatedImage = bitmap.rotate(90f)
+                    val finalImage = rotatedImage!!.copy(rotatedImage!!.config, true)
+                    myFlip(rotatedImage!!, finalImage!!)
+                    runOnUiThread {
+                        binding.imageView.setImageBitmap(finalImage)
+                    }
+                    image.close()
+                }
+            }
+    }
+    */
+
     override fun analyze(image: ImageProxy) {
+        //println("we're inside analyze")
         val bitmap = image.toBitmap()
-        if (!::captureAct.isInitialized) {
-            val manipulatedImage = bitmap.copy(bitmap.config, true)
-            var path = assetFilePath(this, "CPU_model_best.pt")!! //NOTE: needs to exist, otherwise model wont load
-            captureAct = captureActivity(corners, manipulatedImage)
+        //val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(270f) else bitmap
+        val rotatedImage = bitmap
+        val finalImage = rotatedImage.copy(rotatedImage.config, true)
+        //myFlip(rotatedImage, finalImage)
+        if (!startBoolean){
+            runOnUiThread {
+                //binding.imageView.setVisibility(View.VISIBLE)
+                //binding.imageView.setImageBitmap(rotatedImage)
+            }
         }
-        if (startBoolean) {
-            val bitmapCopy = bitmap.copy(bitmap.config, true)
-//            val manipulatedImage = bitmap.copy(bitmap.config, true)
-            val manipulatedImage = createBitmap(captureAct.width, captureAct.height)
-            captureAct.capture(bitmapCopy, manipulatedImage)
-            runOnUiThread {
-                binding.imageView.setImageBitmap(manipulatedImage)
-            }
-        } else {
-            val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap
-            runOnUiThread {
-                binding.imageView.setImageBitmap(rotatedImage)
-            }
+        else {
+            //binding.imageView.setVisibility(View.INVISIBLE)
         }
         image.close()
     }
 
-    private fun Bitmap.rotate(degrees: Float): Bitmap {
+
+    fun Bitmap.rotate(degrees: Float): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees) }
         return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
-    fun startOnClick(view: View) {
+    fun btnFlipOnClick(view: View) {
         if (!startBoolean) {
-            startButton.text = getString(R.string.OFF)
+            startButton.text = "Stop"
             startBoolean = true
         } else {
-            startButton.text = getString(R.string.ON)
+            startButton.text = "Start"
             startBoolean = false
             imageView.setImageBitmap(null)
         }
+
+
+        /*
+        if (srcBitmap == null && dstBitmap == null) {
+            srcBitmap = testImage.bitmap
+            dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
+        }
+        myFlip(srcBitmap!!,srcBitmap!!)
+        this.doBlur()
+         */
     }
 
+    private fun doBlur() {
+        if (srcBitmap == null && dstBitmap == null) {
+            srcBitmap = testImage.bitmap
+            dstBitmap = srcBitmap!!.copy(srcBitmap!!.config, true)
+        }
+        // The SeekBar range is 0-100 convert it to 0.1-10
+        val sigma = max(0.1F, sldSigma.progress / 10F)
+
+        // This is the actual call to the blur method inside native-lib.cpp
+        this.myBlur(srcBitmap!!, dstBitmap!!, sigma)
+        imageView.setImageBitmap(dstBitmap)
+    }
+
+    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+        this.doBlur()
+    }
     /**
      * A native method that is implemented by the 'digitalwhiteboard' native library,
      * which is packaged with this application.
      */
+    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+    external fun stringFromJNI(): String
+    external fun myFlip(bitmap: Bitmap, bitmapOut: Bitmap)
+    external fun myBlur(bitmap: Bitmap, bitmapOut: Bitmap, sigma: Float)
 
     companion object {
         // Used to load the 'digitalwhiteboard' library on application startup.
         init {
-            System.loadLibrary("digitalwhiteboard")
+            System.loadLibrary("native-lib")
         }
     }
 }

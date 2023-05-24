@@ -20,8 +20,4 @@
         <item>Spinner 1</item>
         <item>Spinner 2</item>
     </string-array>
-    <string name="OFF"> OFF </string>
-    <string name="ON"> ON </string>
-    <string name="START"> START </string>
-    <string name="STOP"> STOP </string>
 </resources>

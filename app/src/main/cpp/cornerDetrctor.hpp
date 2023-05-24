@@ -26,5 +26,5 @@ public:
     static std::vector<cv::Point> approxCornerPoints(std::vector<cv::Point> shapePoints, const cv::Mat& img);
     static int getMinDistanceIndex(std::vector<cv::Point> points, cv::Point targetPoint);
     static std::vector<cv::Point> orderPoints(std::vector<cv::Point> cornerPoints);
-    static void drawCorners(std::vector<cv::Point> cornerPoints, cv::Mat& imgBgr);
+    static void drawCorners(std::vector<cv::Point> cornerPoints, cv::Mat imgBgr);
 };
