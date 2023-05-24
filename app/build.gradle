@@ -39,7 +39,7 @@ android {
                     "-DANDROID_TOOLCHAIN=clang",
                     "-DANDROID_PLATFORM=android-29",
                     "-DANDROID_CPP_FEATURES=rtti exceptions",
-                    "-DANDROID_NDK=C:/Users/gislu/AppData/Local/Android/Sdk/ndk/25.2.9519653", //TODO make user agnostic
+                    //"-DANDROID_NDK=C:/Users/gislu/AppData/Local/Android/Sdk/ndk/25.2.9519653", //TODO make user agnostic
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-Wl,-gc_sections,--strip-debug,-shared"
                 cFlags "-fstack-protector-all", "-fuse-ld=lld", "-fvisibility=hidden", "-ffunction-sections", "-fdata-sections", "-shared", "-Wno-error=format-security"
@@ -92,7 +92,16 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.preference:preference:1.2.0'
+    implementation 'androidx.camera:camera-camera2:1.2.2'
+    implementation 'androidx.test:monitor:1.5.0'
+    implementation 'androidx.test.ext:junit-ktx:1.1.5'
     testImplementation 'junit:junit:4.13.2'
+//    testImplementation 'mockito'
+    testImplementation 'org.mockito:mockito-core:4.2.0'
+    testImplementation "org.mockito.kotlin:mockito-kotlin:3.1.0"
+//    testImplementation "org.mockito.kotlin:mockito-kotlin"
+
+    testImplementation 'org.robolectric:robolectric:4.9'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
