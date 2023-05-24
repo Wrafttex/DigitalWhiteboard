@@ -55,7 +55,7 @@ class DrawActivity : AppCompatActivity(), ImageAnalysis.Analyzer {
         imageView = findViewById(R.id.imageView)
         val prefStorage = PrefStorage(this)
         val preferredResolution = prefStorage.storageRead("module","")
-        if (preferredResolution.isNullOrEmpty()) {
+        if (preferredResolution.isNullOrEmpty() || !preferredResolution.contains('x')) {
             resolution = Size(1280, 720)
         } else {
             val splitString = preferredResolution?.split("x")

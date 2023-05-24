@@ -35,11 +35,11 @@ class MainActivity : AppCompatActivity() {
         val previewView = findViewById<PreviewView>(R.id.viewFinder)
         val prefStorage = PrefStorage(this)
         val preferredResolution = prefStorage.storageRead("module","")
-        if (preferredResolution.isNullOrEmpty()) {
+        if (preferredResolution.isNullOrEmpty() || !preferredResolution.contains('x')) {
             resolution = Size(1280, 720)
         } else {
-            val splitString = preferredResolution?.split("x")
-            resolution = Size(splitString!![0].toInt(), splitString[1].toInt())
+            val splitString = preferredResolution.split("x")
+            resolution = Size(splitString[0].toInt(), splitString[1].toInt())
         }
         previewView.layoutParams.width = resolution.width
         previewView.layoutParams.height = resolution.height
@@ -58,10 +58,12 @@ class MainActivity : AppCompatActivity() {
 
         settingsButton.setOnClickListener {
             val intent = Intent (this@MainActivity, SettingActivity::class.java)
-            val availableResolutions: Array<IntArray> = Array(resolutions.size) { intArrayOf(0, 0) }
+            val availableResolutions: Array<IntArray>
             if (resolutions.isNullOrEmpty()) {
                 resolutions = arrayOf(Size(1280, 720))
+                availableResolutions = Array(resolutions.size) { intArrayOf(0, 0) }
             } else {
+                availableResolutions = Array(resolutions.size) { intArrayOf(0, 0) }
                 for (i in resolutions.indices) {
                     availableResolutions[i][0] = resolutions[i].width
                     availableResolutions[i][1] = resolutions[i].height

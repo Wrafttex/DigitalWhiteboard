@@ -22,7 +22,7 @@ std::vector<cv::Point> cornerDetrctor::findCorners(cv::Mat& imgBgr) {
     cv::Mat imgEdges = makeEdgeImage(imgBgr);
     std::vector<cv::Point> cornerPoints = getCorners(imgEdges);
     if (cornerPoints.size() == 4) cornerPoints = orderPoints(cornerPoints);
-    this->cornerRunningAVG(corerPoints);
+    this->cornerRunningAVG(cornerPoints);
     auto t1 = clk::now(); // TEST CODE
     rounds++;
     totalTime += duration<double, std::milli>(t1-t0).count();

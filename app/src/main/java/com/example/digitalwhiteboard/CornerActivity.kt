@@ -55,7 +55,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
         drawingOverlay = findViewById(R.id.drawingOverlay)
         val prefStorage = PrefStorage(this)
         val preferredResolution = prefStorage.storageRead("module","")
-        if (preferredResolution.isNullOrEmpty()) {
+        if (preferredResolution.isNullOrEmpty() || !preferredResolution.contains('x')) {
             resolution = Size(1280, 720)
         } else {
             val splitString = preferredResolution?.split("x")
