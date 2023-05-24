@@ -6,18 +6,21 @@
 using std::chrono::duration;
 using clk = std::chrono::high_resolution_clock;
 
-captureActivity::captureActivity(std::vector<cv::Point>&& corners, cv::Size imgSize) : corners(corners), captureService(imgSize) {}
+captureActivity::captureActivity(const std::vector<cv::Point>& corners, const cv::Size& imgSize, const cv::Mat& imgBgr) : corners(corners), captureService(imgSize) {
+    pt = perspectiveTransformer{imgBgr, corners};
+}
 
-captureActivity::captureActivity(std::vector<cv::Point>&& corners, cv::Size&& imgSize, const std::string& path):
-    corners(std::move(corners)), captureService(CaptureService(imgSize, path)) {}
+captureActivity::captureActivity(const std::vector<cv::Point>& corners, const cv::Size& imgSize, const std::string& path):
+    corners(corners), captureService(CaptureService(imgSize, path)) {}
 
-auto captureActivity::capture(cv::Mat&& imgBgr) -> cv::Mat {
+auto captureActivity::capture(const cv::Mat& imgBgr) -> cv::Mat {
     // Perspective transform
     auto t0 = clk::now();
-    cv::Mat imgPerspective = PerspectiveTransformer.getPerspective(std::move(imgBgr), corners);
+    cv::Mat imgPerspective = pt.perspectiveWraping(imgBgr);
     auto t1 = clk::now();
-    __android_log_print(ANDROID_LOG_DEBUG, "PerspectiveTransformer", "%s ms", std::to_string(duration<double, std::milli>(t1-t0).count()).c_str());
-//    std::cout << "PerspectiveTransformer loop took: " << duration<double, std::milli>(t1-t0).count() << " ms" << std::endl;
+    rounds++;
+    totalTime += duration<double, std::milli>(t1-t0).count();
+    __android_log_print(ANDROID_LOG_DEBUG, "PerspectiveTransformer", "avg: %s ms", std::to_string(totalTime/rounds).c_str());
 
     if (!imgPerspective.empty()) {
         // Capture

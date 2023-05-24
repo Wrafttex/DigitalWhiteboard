@@ -120,7 +120,7 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
 
     private fun buildImageAnalysisUseCase(): ImageAnalysis {
         return ImageAnalysis.Builder()
-            .setTargetResolution(Size(1600, 900))
+            .setTargetResolution(Size(1280, 960))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also { it.setAnalyzer(cameraExecutor, this) }
     }
@@ -133,7 +133,6 @@ class CornerActivity : AppCompatActivity(), ImageAnalysis.Analyzer, View.OnTouch
             updateCorners(newCorners)
         }
         val rotatedImage = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) bitmap.rotate(90f) else bitmap // Makes image turn correctly in relation to portrait/landscape
-//        val finalImage = rotatedImage.copy(rotatedImage.config, true) // rotatedImage is enough if the function call does not require two copies of the same bitmap
         runOnUiThread {
             binding.imageView.setImageBitmap(rotatedImage)
         }
