@@ -40,6 +40,7 @@ By incorporating these key features, the Mobile Whiteboard App aims to provide a
 
 ## Installation
 
+This app supports Android versions 9 till 13.
 Please follow the steps below to install the app:
 
 1. Clone the repository to your local machine using the following command:
@@ -48,20 +49,16 @@ Please follow the steps below to install the app:
    git clone https://github.com/Wrafttex/DigitalWhiteboard.git
    
 2. Open Android Studio and select "Open an existing Android Studio project."
-
 3. Navigate to the cloned repository and select the project folder.
-
-4. Once the project is open in Android Studio, wait for the Gradle build to complete.
-
-5. Connect your Android phone to your computer using a USB cable.
-
-6. In Android Studio, click on the "Run" button (green triangle) or select "Run > Run 'app'" from the top menu.
-
-7. Select your connected Android device from the list of available devices and click "OK".
-
-8. Android Studio will compile the project and install the app on your Android device.
-
-9. Once the installation is complete, you can launch the app on your Android phone.
+4. Download the OpenCV android sdk from here https://opencv.org/releases/.
+5. In the CmakeLists.txt you need to change line 40 to your OpenCV android sdk location.
+6. in the local.properties you need to change line 8 and 9 to the location of your Cmake and android SDK.
+7. Once the project is open in Android Studio, wait for the Gradle build to complete.
+8. Connect your Android phone to your computer using a USB cable.
+9. In Android Studio, click on the "Run" button (green triangle) or select "Run > Run 'app'" from the top menu.
+10. Select your connected Android device from the list of available devices and click "OK".
+11. Android Studio will compile the project and install the app on your Android device.
+12. Once the installation is complete, you can launch the app on your Android phone.
 
 ## License
 
