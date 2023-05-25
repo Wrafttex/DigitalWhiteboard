@@ -41,6 +41,7 @@ By incorporating these key features, the Mobile Whiteboard App aims to provide a
 ## Installation
 
 This app supports Android versions 9 till 13.
+
 Please follow the steps below to install the app:
 
 1. Clone the repository to your local machine using the following command:
