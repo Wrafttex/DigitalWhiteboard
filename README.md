@@ -1,4 +1,4 @@
-# DigitalWhiteboarf
+# DigitalWhiteboard
 
 The primary goal of this project is to design a mobile computer vision application that converts handwritten content on ordinary paper into a digital whiteboard. The system will operate in real-time and low computational cost. There are two main areas of focus:
 
